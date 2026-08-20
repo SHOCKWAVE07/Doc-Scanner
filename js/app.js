@@ -9,7 +9,7 @@ const pagesEl=$("pages"), emptyEl=$("empty"), pageCountEl=$("pageCount");
 const pdfBtn=$("pdfBtn"), clearAllBtn=$("clearAll"), toastEl=$("toast");
 const previewModal=$("previewModal"), previewImage=$("previewImage"), previewTitle=$("previewTitle");
 const optimizeBtn=$("optimizeBtn"), sizeInfo=$("sizeInfo"), beforeSizeEl=$("beforeSize"), afterSizeEl=$("afterSize"), sizeSavingEl=$("sizeSaving");
-const exportModal=$("exportModal"), exportNameEl=$("exportName"), exportPdfEl=$("exportPdf"), exportImagesEl=$("exportImages");
+const exportModal=$("exportModal"), exportNameEl=$("exportName"), exportPdfEl=$("exportPdf"), exportImagesEl=$("exportImages"), exportImagesOption=$("exportImagesOption");
 
 let cvReady=false, scanner=null, currentImage=null, currentImageURL=null;
 let fileQueue=[];
@@ -665,6 +665,11 @@ function renderPages(){
   });
   pageCountEl.textContent=pages.length+" "+(pages.length===1?"page":"pages");
   pdfBtn.disabled=pages.length===0; clearAllBtn.disabled=pages.length===0;
+  exportImagesEl.disabled=pages.length!==1;
+  exportImagesOption.title=pages.length===1
+    ? "Download the single scanned page as a JPEG"
+    : "Image download is available only for one scanned page";
+  if(pages.length!==1) exportPdfEl.checked=true;
 }
 function makeBtn(icon,title,cls){
   const b=document.createElement("button"); b.className=cls; b.title=title; b.textContent=icon; return b;
@@ -887,25 +892,25 @@ async function savePDF(fileName){
 }
 
 async function saveImages(fileName){
-  for(let i=0;i<pages.length;i++){
-    setStatus(`Downloading image ${i+1} of ${pages.length}…`,10+Math.round((i/pages.length)*80));
-    downloadBlob(pages[i].blob,`${fileName}${pages.length>1?`-${i+1}`:""}.jpg`);
-    await new Promise(resolve=>setTimeout(resolve,150));
-  }
+  if(pages.length!==1) return;
+  setStatus("Downloading image…",60);
+  downloadBlob(pages[0].blob,`${fileName}.jpg`);
 }
 
 const confirmExportButton=$("confirmExport");
 
 function openExport(){
   if(!pages.length) return;
+  exportImagesEl.disabled=pages.length!==1;
+  if(pages.length!==1) exportPdfEl.checked=true;
   exportModal.classList.add("open");
   exportNameEl.focus();
   exportNameEl.select();
 }
 function closeExport(){exportModal.classList.remove("open")}
 async function confirmExport(){
-  if(!exportPdfEl.checked && !exportImagesEl.checked){
-    toast("Choose at least one download type.");
+  if(exportImagesEl.checked && pages.length!==1){
+    toast("Image download is available only for one scanned page.");
     return;
   }
 
@@ -913,8 +918,8 @@ async function confirmExport(){
   closeExport();
   confirmExportButton.disabled=true;
   try{
-    if(exportPdfEl.checked) await savePDF(fileName);
     if(exportImagesEl.checked) await saveImages(fileName);
+    else await savePDF(fileName);
     setStatus("Downloads ready.",100);
     toast("Download complete");
   }finally{

@@ -110,10 +110,10 @@
       <button class="close" id="closeExport">✕</button>
     </div>
     <label class="field-label" for="exportName">File name</label>
-    <input class="text-input" id="exportName" type="text" value="government-document-scan" maxlength="80" autocomplete="off">
+    <input class="text-input" id="exportName" type="text" value="Document" maxlength="80" autocomplete="off">
     <div class="export-options">
-      <label class="check-option"><input id="exportPdf" type="checkbox" checked> <span>PDF document</span></label>
-      <label class="check-option"><input id="exportImages" type="checkbox"> <span>Individual page images (JPEG)</span></label>
+      <label class="check-option"><input id="exportPdf" name="exportFormat" type="radio" checked> <span>PDF document</span></label>
+      <label class="check-option" id="exportImagesOption"><input id="exportImages" name="exportFormat" type="radio"> <span>Single image (JPEG)</span></label>
     </div>
     <div class="modal-actions">
       <button class="btn secondary" id="cancelExport">Cancel</button>
