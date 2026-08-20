@@ -17,6 +17,7 @@ let corners=[], detectedCorners=[], currentFileName="", dragIndex=-1;
 let pages=[], previewIndex=-1;
 let pendingOptimized=null;
 let draggedPageIndex=-1;
+let pagePointerDrag=null;
 
 function setStatus(s,p=null){
   statusEl.textContent=s;
@@ -623,7 +624,7 @@ function renderPages(){
   pagesEl.innerHTML="";
   if(!pages.length) pagesEl.appendChild(emptyEl);
   pages.forEach((p,i)=>{
-    const card=document.createElement("div"); card.className="page"; card.draggable=true;
+    const card=document.createElement("div"); card.className="page";
     card.dataset.index=i;
     const img=document.createElement("img"); img.src=p.url; img.alt="Page "+(i+1);
         const meta=document.createElement("div"); meta.className="page-meta";
@@ -636,31 +637,7 @@ function renderPages(){
     rot.onclick=()=>rotatePage(i);
     del.onclick=()=>deletePage(i);
     actions.append(prev,rot,del);
-    card.addEventListener("dragstart",e=>{
-      draggedPageIndex=i;
-      card.classList.add("dragging");
-      e.dataTransfer.effectAllowed="move";
-    });
-    card.addEventListener("dragend",()=>{
-      draggedPageIndex=-1;
-      card.classList.remove("dragging");
-      pagesEl.querySelectorAll(".page").forEach(page=>page.classList.remove("drag-over"));
-    });
-    card.addEventListener("dragover",e=>{
-      e.preventDefault();
-      if(draggedPageIndex!==i) card.classList.add("drag-over");
-      e.dataTransfer.dropEffect="move";
-    });
-    card.addEventListener("dragleave",()=>card.classList.remove("drag-over"));
-    card.addEventListener("drop",e=>{
-      e.preventDefault();
-      card.classList.remove("drag-over");
-      if(draggedPageIndex<0 || draggedPageIndex===i) return;
-      const [moved]=pages.splice(draggedPageIndex,1);
-      pages.splice(i,0,moved);
-      renderPages();
-      toast("Page order updated");
-    });
+    card.addEventListener("pointerdown",e=>startPagePointerDrag(i,e));
     card.append(img,meta,actions); pagesEl.appendChild(card);
   });
   pageCountEl.textContent=pages.length+" "+(pages.length===1?"page":"pages");
@@ -671,6 +648,50 @@ function renderPages(){
     : "Image download is available only for one scanned page";
   if(pages.length!==1) exportPdfEl.checked=true;
 }
+
+function startPagePointerDrag(index,e){
+  if(e.button!==undefined && e.button!==0) return;
+  if(e.target.closest("button")) return;
+
+  pagePointerDrag={index,pointerId:e.pointerId,moved:false,targetIndex:index};
+  draggedPageIndex=index;
+  e.preventDefault();
+  pagesEl.querySelector(`[data-index="${index}"]`)?.classList.add("dragging");
+}
+
+function updatePagePointerDrag(e){
+  if(!pagePointerDrag || e.pointerId!==pagePointerDrag.pointerId) return;
+
+  const source=pagesEl.querySelector(`[data-index="${pagePointerDrag.index}"]`);
+  const target=document.elementFromPoint(e.clientX,e.clientY)?.closest(".page");
+  if(!source || !target || !pagesEl.contains(target)) return;
+
+  pagePointerDrag.moved=true;
+  const targetIndex=Number(target.dataset.index);
+  pagePointerDrag.targetIndex=targetIndex;
+  pagesEl.querySelectorAll(".page").forEach(page=>page.classList.remove("drag-over"));
+  if(targetIndex!==pagePointerDrag.index) target.classList.add("drag-over");
+}
+
+function finishPagePointerDrag(e){
+  if(!pagePointerDrag || (e && e.pointerId!==pagePointerDrag.pointerId)) return;
+
+  const {index,targetIndex,moved}=pagePointerDrag;
+  pagePointerDrag=null;
+  draggedPageIndex=-1;
+  pagesEl.querySelectorAll(".page").forEach(page=>page.classList.remove("dragging","drag-over"));
+
+  if(!moved || index===targetIndex || targetIndex<0) return;
+  const [movedPage]=pages.splice(index,1);
+  pages.splice(targetIndex,0,movedPage);
+  renderPages();
+  toast("Page order updated");
+}
+
+pagesEl.addEventListener("pointermove",updatePagePointerDrag);
+window.addEventListener("pointerup",finishPagePointerDrag);
+window.addEventListener("pointercancel",finishPagePointerDrag);
+
 function makeBtn(icon,title,cls){
   const b=document.createElement("button"); b.className=cls; b.title=title; b.textContent=icon; return b;
 }

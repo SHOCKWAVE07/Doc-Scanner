@@ -52,7 +52,7 @@ input[type=file]{display:none}
 .small-note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:9px;text-align:center}
 
 .pages{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.page{position:relative;background:#fff;border:1px solid var(--line);border-radius:15px;padding:7px;overflow:hidden;cursor:grab;transition:opacity .15s,border-color .15s,transform .15s}
+.page{position:relative;background:#fff;border:1px solid var(--line);border-radius:15px;padding:7px;overflow:hidden;cursor:grab;touch-action:none;transition:opacity .15s,border-color .15s,transform .15s}
 .page:active{cursor:grabbing}
 .page.dragging{opacity:.45}
 .page.drag-over{border-color:var(--blue);transform:translateY(-3px)}
