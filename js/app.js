@@ -9,12 +9,14 @@ const pagesEl=$("pages"), emptyEl=$("empty"), pageCountEl=$("pageCount");
 const pdfBtn=$("pdfBtn"), clearAllBtn=$("clearAll"), toastEl=$("toast");
 const previewModal=$("previewModal"), previewImage=$("previewImage"), previewTitle=$("previewTitle");
 const optimizeBtn=$("optimizeBtn"), sizeInfo=$("sizeInfo"), beforeSizeEl=$("beforeSize"), afterSizeEl=$("afterSize"), sizeSavingEl=$("sizeSaving");
+const exportModal=$("exportModal"), exportNameEl=$("exportName"), exportPdfEl=$("exportPdf"), exportImagesEl=$("exportImages");
 
 let cvReady=false, scanner=null, currentImage=null, currentImageURL=null;
 let fileQueue=[];
 let corners=[], detectedCorners=[], currentFileName="", dragIndex=-1;
 let pages=[], previewIndex=-1;
 let pendingOptimized=null;
+let draggedPageIndex=-1;
 
 function setStatus(s,p=null){
   statusEl.textContent=s;
@@ -621,7 +623,8 @@ function renderPages(){
   pagesEl.innerHTML="";
   if(!pages.length) pagesEl.appendChild(emptyEl);
   pages.forEach((p,i)=>{
-    const card=document.createElement("div"); card.className="page";
+    const card=document.createElement("div"); card.className="page"; card.draggable=true;
+    card.dataset.index=i;
     const img=document.createElement("img"); img.src=p.url; img.alt="Page "+(i+1);
         const meta=document.createElement("div"); meta.className="page-meta";
     meta.textContent=`${i+1}. ${p.name}`;
@@ -633,6 +636,31 @@ function renderPages(){
     rot.onclick=()=>rotatePage(i);
     del.onclick=()=>deletePage(i);
     actions.append(prev,rot,del);
+    card.addEventListener("dragstart",e=>{
+      draggedPageIndex=i;
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed="move";
+    });
+    card.addEventListener("dragend",()=>{
+      draggedPageIndex=-1;
+      card.classList.remove("dragging");
+      pagesEl.querySelectorAll(".page").forEach(page=>page.classList.remove("drag-over"));
+    });
+    card.addEventListener("dragover",e=>{
+      e.preventDefault();
+      if(draggedPageIndex!==i) card.classList.add("drag-over");
+      e.dataTransfer.dropEffect="move";
+    });
+    card.addEventListener("dragleave",()=>card.classList.remove("drag-over"));
+    card.addEventListener("drop",e=>{
+      e.preventDefault();
+      card.classList.remove("drag-over");
+      if(draggedPageIndex<0 || draggedPageIndex===i) return;
+      const [moved]=pages.splice(draggedPageIndex,1);
+      pages.splice(i,0,moved);
+      renderPages();
+      toast("Page order updated");
+    });
     card.append(img,meta,actions); pagesEl.appendChild(card);
   });
   pageCountEl.textContent=pages.length+" "+(pages.length===1?"page":"pages");
@@ -750,7 +778,21 @@ async function makePageDataURL(p){
   return await blobToDataURL(p.blob);
 }
 
-async function savePDF(){
+function cleanExportName(){
+  const name=exportNameEl.value.trim().replace(/\.pdf$/i,"").replace(/[\\/:*?"<>|]+/g,"-");
+  return name || "government-document-scan";
+}
+
+function downloadBlob(blob,name){
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  link.href=url;
+  link.download=name;
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function savePDF(fileName){
   if(!pages.length) return;
 
   pdfBtn.disabled=true;
@@ -823,7 +865,7 @@ async function savePDF(){
       );
     }
 
-    doc.save("government-document-scan.pdf");
+    downloadBlob(doc.output("blob"),fileName+".pdf");
 
     setStatus("PDF saved successfully.",100);
     toast("PDF saved");
@@ -844,7 +886,47 @@ async function savePDF(){
   }
 }
 
-pdfBtn.onclick=savePDF;
+async function saveImages(fileName){
+  for(let i=0;i<pages.length;i++){
+    setStatus(`Downloading image ${i+1} of ${pages.length}…`,10+Math.round((i/pages.length)*80));
+    downloadBlob(pages[i].blob,`${fileName}${pages.length>1?`-${i+1}`:""}.jpg`);
+    await new Promise(resolve=>setTimeout(resolve,150));
+  }
+}
+
+const confirmExportButton=$("confirmExport");
+
+function openExport(){
+  if(!pages.length) return;
+  exportModal.classList.add("open");
+  exportNameEl.focus();
+  exportNameEl.select();
+}
+function closeExport(){exportModal.classList.remove("open")}
+async function confirmExport(){
+  if(!exportPdfEl.checked && !exportImagesEl.checked){
+    toast("Choose at least one download type.");
+    return;
+  }
+
+  const fileName=cleanExportName();
+  closeExport();
+  confirmExportButton.disabled=true;
+  try{
+    if(exportPdfEl.checked) await savePDF(fileName);
+    if(exportImagesEl.checked) await saveImages(fileName);
+    setStatus("Downloads ready.",100);
+    toast("Download complete");
+  }finally{
+    confirmExportButton.disabled=false;
+  }
+}
+
+pdfBtn.onclick=openExport;
+$("closeExport").onclick=closeExport;
+$("cancelExport").onclick=closeExport;
+exportModal.onclick=e=>{if(e.target===exportModal)closeExport()};
+confirmExportButton.onclick=confirmExport;
 
 window.addEventListener("beforeunload",()=>{
   if(currentImageURL)URL.revokeObjectURL(currentImageURL);

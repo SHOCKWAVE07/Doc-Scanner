@@ -72,7 +72,7 @@
   <section class="card">
     <div class="section-title">
       <h2>Scanned pages</h2>
-      <span class="hint">Rotate • Preview • Delete</span>
+      <span class="hint">Drag to reorder • Rotate • Preview • Delete</span>
     </div>
     <div id="pages" class="pages">
       <div class="empty" id="empty">No pages yet. Take or add a photo.</div>
@@ -83,7 +83,7 @@
 <div class="bottom">
   <div class="bottom-inner">
     <button class="btn danger" id="clearAll" disabled>🗑 Clear All</button>
-    <button class="btn primary" id="pdfBtn" disabled>📄 Save All as PDF</button>
+    <button class="btn primary" id="pdfBtn" disabled>📄 Save All </button>
   </div>
 </div>
 
@@ -99,6 +99,25 @@
     <div class="modal-actions">
       <button class="btn secondary" id="previewRotate">↻ Rotate</button>
       <button class="btn danger" id="previewDelete">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="exportModal">
+  <div class="modal-box export-box">
+    <div class="modal-head">
+      <strong>Download scanned pages</strong>
+      <button class="close" id="closeExport">✕</button>
+    </div>
+    <label class="field-label" for="exportName">File name</label>
+    <input class="text-input" id="exportName" type="text" value="government-document-scan" maxlength="80" autocomplete="off">
+    <div class="export-options">
+      <label class="check-option"><input id="exportPdf" type="checkbox" checked> <span>PDF document</span></label>
+      <label class="check-option"><input id="exportImages" type="checkbox"> <span>Individual page images (JPEG)</span></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="cancelExport">Cancel</button>
+      <button class="btn primary" id="confirmExport">⬇ Download</button>
     </div>
   </div>
 </div>
