@@ -12,6 +12,7 @@
  <script src="https://docs.opencv.org/4.7.0/opencv.js" async></script>
 <script src="https://cdn.jsdelivr.net/npm/jscanify@1.4.3/src/jscanify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -118,6 +119,21 @@
     <div class="modal-actions">
       <button class="btn secondary" id="cancelExport">Cancel</button>
       <button class="btn primary" id="confirmExport">⬇ Download</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="ocrModal">
+  <div class="modal-box ocr-box">
+    <div class="modal-head">
+      <strong id="ocrTitle">Recognized text</strong>
+      <button class="close" id="closeOcr">✕</button>
+    </div>
+    <div class="ocr-status" id="ocrStatus">Preparing OCR…</div>
+    <textarea id="ocrText" class="ocr-text" readonly spellcheck="false" placeholder="Recognized text will appear here."></textarea>
+    <div class="modal-actions">
+      <button class="btn secondary" id="copyOcr">Copy Text</button>
+      <button class="btn primary" id="closeOcrAction">Done</button>
     </div>
   </div>
 </div>

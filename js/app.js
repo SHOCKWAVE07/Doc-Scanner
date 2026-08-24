@@ -10,6 +10,7 @@ const pdfBtn=$("pdfBtn"), clearAllBtn=$("clearAll"), toastEl=$("toast");
 const previewModal=$("previewModal"), previewImage=$("previewImage"), previewTitle=$("previewTitle");
 const optimizeBtn=$("optimizeBtn"), sizeInfo=$("sizeInfo"), beforeSizeEl=$("beforeSize"), afterSizeEl=$("afterSize"), sizeSavingEl=$("sizeSaving");
 const exportModal=$("exportModal"), exportNameEl=$("exportName"), exportPdfEl=$("exportPdf"), exportImagesEl=$("exportImages"), exportImagesOption=$("exportImagesOption");
+const ocrModal=$("ocrModal"), ocrTitle=$("ocrTitle"), ocrStatus=$("ocrStatus"), ocrText=$("ocrText");
 
 let cvReady=false, scanner=null, currentImage=null, currentImageURL=null;
 let fileQueue=[];
@@ -626,17 +627,20 @@ function renderPages(){
   pages.forEach((p,i)=>{
     const card=document.createElement("div"); card.className="page";
     card.dataset.index=i;
-    const img=document.createElement("img"); img.src=p.url; img.alt="Page "+(i+1);
-        const meta=document.createElement("div"); meta.className="page-meta";
+    const img=document.createElement("img"); img.src=p.url; img.alt="Page "+(i+1); img.title="Click to recognize text";
+    img.onclick=()=>runOcr(i);
+    const meta=document.createElement("div"); meta.className="page-meta";
     meta.textContent=`${i+1}. ${p.name}`;
     const actions=document.createElement("div"); actions.className="page-actions";
     const prev=makeBtn("👁","Preview","iconbtn");
     const rot=makeBtn("↻","Rotate","iconbtn");
+    const ocr=makeBtn("Aa","Recognize text","iconbtn");
     const del=makeBtn("🗑","Delete","iconbtn delete");
     prev.onclick=()=>openPreview(i);
     rot.onclick=()=>rotatePage(i);
+    ocr.onclick=()=>runOcr(i);
     del.onclick=()=>deletePage(i);
-    actions.append(prev,rot,del);
+    actions.append(prev,rot,ocr,del);
     card.addEventListener("pointerdown",e=>startPagePointerDrag(i,e));
     card.append(img,meta,actions); pagesEl.appendChild(card);
   });
@@ -695,6 +699,51 @@ window.addEventListener("pointercancel",finishPagePointerDrag);
 function makeBtn(icon,title,cls){
   const b=document.createElement("button"); b.className=cls; b.title=title; b.textContent=icon; return b;
 }
+
+async function runOcr(i){
+  const page=pages[i];
+  if(!page) return;
+  if(!window.Tesseract){
+    toast("OCR is still loading.");
+    return;
+  }
+
+  ocrTitle.textContent=`Text from page ${i+1}`;
+  ocrStatus.textContent="Starting OCR…";
+  ocrText.value="";
+  ocrModal.classList.add("open");
+
+  try{
+    const result=await Tesseract.recognize(page.url,"eng",{
+      logger:message=>{
+        if(message.status && typeof message.progress==="number"){
+          ocrStatus.textContent=`${message.status} ${Math.round(message.progress*100)}%`;
+        }
+      }
+    });
+    ocrText.value=result.data.text.trim();
+    ocrStatus.textContent=ocrText.value ? "Text recognized." : "No text was found in this image.";
+  }catch(e){
+    console.error("OCR error:",e);
+    ocrStatus.textContent="OCR failed. Check your connection and try again.";
+  }
+}
+
+function closeOcr(){ocrModal.classList.remove("open")}
+$("closeOcr").onclick=closeOcr;
+$("closeOcrAction").onclick=closeOcr;
+ocrModal.onclick=e=>{if(e.target===ocrModal)closeOcr()};
+$("copyOcr").onclick=async()=>{
+  if(!ocrText.value) return;
+  try{
+    await navigator.clipboard.writeText(ocrText.value);
+    toast("Recognized text copied");
+  }catch(e){
+    ocrText.select();
+    toast("Select the text to copy it");
+  }
+};
+
 async function rotateStoredPage(i){
   const p=pages[i];
 
