@@ -714,19 +714,32 @@ async function runOcr(i){
   ocrModal.classList.add("open");
 
   try{
-    const result=await Tesseract.recognize(page.url,"eng",{
-      logger:message=>{
-        if(message.status && typeof message.progress==="number"){
-          ocrStatus.textContent=`${message.status} ${Math.round(message.progress*100)}%`;
-        }
+    const result=await recognizePage(
+      page,
+      (message,progress)=>{
+        ocrStatus.textContent=`${message} ${Math.round(progress*100)}%`;
       }
-    });
-    ocrText.value=result.data.text.trim();
+    );
+    ocrText.value=result.text.trim();
     ocrStatus.textContent=ocrText.value ? "Text recognized." : "No text was found in this image.";
   }catch(e){
     console.error("OCR error:",e);
     ocrStatus.textContent="OCR failed. Check your connection and try again.";
   }
+}
+
+async function recognizePage(page,onProgress){
+  if(!window.Tesseract) throw new Error("OCR is still loading.");
+
+  const result=await Tesseract.recognize(page.url,"eng",{
+    logger:message=>{
+      if(message.status && typeof message.progress==="number"){
+        onProgress?.(message.status,message.progress);
+      }
+    }
+  });
+
+  return result.data;
 }
 
 function closeOcr(){ocrModal.classList.remove("open")}
@@ -858,6 +871,45 @@ function cleanExportName(){
   return name || "government-document-scan";
 }
 
+function addSearchableText(doc,data,page,x,y,drawW,drawH){
+  const words=(data?.words||[]).filter(word=>
+    word.text?.trim() && word.bbox && word.confidence>0
+  );
+
+  if(!words.length) return;
+
+  let hidden=false;
+  if(
+    window.jspdf.GState &&
+    typeof doc.saveGraphicsState==="function" &&
+    typeof doc.setGState==="function"
+  ){
+    doc.saveGraphicsState();
+    doc.setGState(new window.jspdf.GState({opacity:0}));
+    hidden=true;
+  }else{
+    doc.setTextColor(255,255,255);
+  }
+
+  words.forEach(word=>{
+    const {x0,y0,x1,y1}=word.bbox;
+    const fontSize=Math.max(
+      1,
+      Math.min(12,(y1-y0)/page.h*drawH*2.83465)
+    );
+
+    doc.setFontSize(fontSize);
+    doc.text(
+      word.text.trim(),
+      x+x0/page.w*drawW,
+      y+y1/page.h*drawH,
+      {baseline:"bottom"}
+    );
+  });
+
+  if(hidden) doc.restoreGraphicsState();
+}
+
 function downloadBlob(blob,name){
   const url=URL.createObjectURL(blob);
   const link=document.createElement("a");
@@ -938,6 +990,24 @@ async function savePDF(fileName){
         undefined,
         "FAST"
       );
+
+      try{
+        setStatus(
+          `Recognizing text on page ${i+1} of ${pages.length}…`,
+          90+Math.round((i/pages.length)*8)
+        );
+        const ocrData=await recognizePage(p,(message,progress)=>{
+          if(message==="recognizing text"){
+            setStatus(
+              `Recognizing text on page ${i+1} of ${pages.length}…`,
+              90+Math.round((i/pages.length)*8*progress)
+            );
+          }
+        });
+        addSearchableText(doc,ocrData,p,x,y,drawW,drawH);
+      }catch(ocrError){
+        console.warn("OCR export skipped for page",i+1,ocrError);
+      }
     }
 
     downloadBlob(doc.output("blob"),fileName+".pdf");
