@@ -11,6 +11,11 @@ const previewModal=$("previewModal"), previewImage=$("previewImage"), previewTit
 const optimizeBtn=$("optimizeBtn"), sizeInfo=$("sizeInfo"), beforeSizeEl=$("beforeSize"), afterSizeEl=$("afterSize"), sizeSavingEl=$("sizeSaving");
 const exportModal=$("exportModal"), exportNameEl=$("exportName"), exportPdfEl=$("exportPdf"), exportImagesEl=$("exportImages"), exportImagesOption=$("exportImagesOption");
 const ocrModal=$("ocrModal"), ocrTitle=$("ocrTitle"), ocrStatus=$("ocrStatus"), ocrText=$("ocrText");
+// New UI elements
+const qualityFeedback=$("qualityFeedback"), qualityBadge=$("qualityBadge"), qualityBlur=$("qualityBlur"), qualityBlurPct=$("qualityBlurPct");
+const qualityReadability=$("qualityReadability"), qualityReadabilityPct=$("qualityReadabilityPct"), qualityMessage=$("qualityMessage");
+const compressionSelector=$("compressionSelector"), profileSelect=$("profileSelect"), profileHint=$("profileHint");
+const scanModeSelector=$("scanModeSelector"), scanModeSelect=$("scanModeSelect"), modeHint=$("modeHint");
 
 let cvReady=false, scanner=null, currentImage=null, currentImageURL=null;
 let fileQueue=[];
@@ -19,6 +24,13 @@ let pages=[], previewIndex=-1;
 let pendingOptimized=null;
 let draggedPageIndex=-1;
 let pagePointerDrag=null;
+
+// UI State
+let selectedCompressionProfile = "balanced";
+
+// Initialize services
+let logger, qualityValidator, orientationDetector, enhancementEngine, compressionProfiles;
+let appState;
 
 function setStatus(s,p=null){
   statusEl.textContent=s;
@@ -41,9 +53,107 @@ function waitForCV(){
   });
 }
 waitForCV().then(()=>{
-  cvReady=true; scanner=new jscanify();
+  // Initialize services
+  logger = new Logger(SCANNER_CONFIG);
+  qualityValidator = new QualityValidator(SCANNER_CONFIG);
+  orientationDetector = new OrientationDetector(SCANNER_CONFIG);
+  enhancementEngine = new EnhancementEngine(SCANNER_CONFIG);
+  compressionProfiles = new CompressionProfiles(SCANNER_CONFIG);
+  appState = new ApplicationState();
+  
+  // Setup UI
+  setupProfileSelector();
+  
+  cvReady=true; 
+  scanner=new jscanify();
   setStatus("Ready. Take a photo or add multiple photos.",0);
 }).catch(e=>setStatus(e.message,0));
+
+function setupProfileSelector(){
+  if(!profileSelect) return;
+  
+  profileSelect.onchange = (e) => {
+    selectedCompressionProfile = e.target.value;
+    const profiles = compressionProfiles.getAllProfiles();
+    const selected = profiles.find(p => p.id === selectedCompressionProfile);
+    if(selected && profileHint){
+      profileHint.textContent = selected.description;
+    }
+  };
+  
+  // Show hints for each profile on hover
+  const hints = {
+    highQuality: "Best for documents requiring high readability, larger file size (~1-2MB per page)",
+    balanced: "Good balance of quality and file size (~300-800KB per page)",
+    smallSize: "Smallest files for storage/sharing (~100-300KB per page)"
+  };
+  
+  profileSelect.onmouseover = (e) => {
+    const value = e.target.value;
+    if(hints[value]) profileHint.textContent = hints[value];
+  };
+  
+  // Setup scan mode selector
+  if(scanModeSelect){
+    scanModeSelect.onchange = (e) => {
+      const scanMode = e.target.value;
+      appState.currentScanMode = scanMode;
+      const modeConfig = SCANNER_CONFIG.scanModes[scanMode];
+      if(modeConfig && modeHint){
+        modeHint.textContent = modeConfig.label + " mode - " + 
+          (scanMode === "document" ? "Optimized for regular documents" :
+           scanMode === "book" ? "Handles page curvature & spine" :
+           scanMode === "idCard" ? "Small format with high clarity" :
+           scanMode === "passport" ? "Passport page optimization" :
+           scanMode === "whiteboard" ? "Glare & perspective correction" :
+           "Preserves photographic appearance");
+      }
+    };
+  }
+}
+
+function displayQualityFeedback(qualityResult){
+  if(!qualityFeedback || !qualityResult) return;
+  
+  // Show the quality section
+  qualityFeedback.style.display = "block";
+  
+  // Update badge
+  let badgeText = "Poor";
+  let badgeColor = "red";
+  
+  if(qualityResult.readabilityScore >= 0.8){
+    badgeText = "Excellent";
+    badgeColor = "green";
+  } else if(qualityResult.readabilityScore >= 0.6){
+    badgeText = "Good";
+    badgeColor = "blue";
+  } else if(qualityResult.readabilityScore >= 0.4){
+    badgeText = "Fair";
+    badgeColor = "orange";
+  }
+  
+  qualityBadge.textContent = badgeText;
+  qualityBadge.style.color = badgeColor;
+  
+  // Update progress bars
+  const blurPercent = Math.round(qualityResult.blurScore * 100);
+  const readabilityPercent = Math.round(qualityResult.readabilityScore * 100);
+  
+  qualityBlur.style.width = blurPercent + "%";
+  qualityBlurPct.textContent = blurPercent + "%";
+  qualityReadability.style.width = readabilityPercent + "%";
+  qualityReadabilityPct.textContent = readabilityPercent + "%";
+  
+  // Update message
+  if(qualityResult.isAcceptable){
+    qualityMessage.textContent = "Image quality is acceptable for scanning";
+    qualityMessage.style.color = "green";
+  } else {
+    qualityMessage.textContent = qualityResult.getDetailedReason() || "Image quality is below recommended threshold";
+    qualityMessage.style.color = "orange";
+  }
+}
 
 cameraBtn.onclick=()=>cameraInput.click();
 galleryBtn.onclick=()=>galleryInput.click();
@@ -289,6 +399,9 @@ function autoDetect(){
         "4 corners detected. Drag them to the exact document corners.",
         45
       );
+      
+      // Detect orientation and auto-rotate if configured
+      detectAndApplyOrientation(mat);
     }else{
       detectedCorners=[];
       corners=defaultCorners();
@@ -310,6 +423,77 @@ function autoDetect(){
   }finally{
     if(contour) contour.delete();
     if(mat) mat.delete();
+  }
+}
+
+async function detectAndApplyOrientation(mat){
+  if(!orientationDetector || !SCANNER_CONFIG.orientation.autoDetectEnabled){
+    return;
+  }
+
+  try{
+    setStatus("Checking document orientation…", 50);
+    
+    // Create a canvas from the detected region for orientation analysis
+    const orientationCanvas = document.createElement("canvas");
+    orientationCanvas.width = sourceCanvas.width;
+    orientationCanvas.height = sourceCanvas.height;
+    cv.imshow(orientationCanvas, mat);
+    
+    const orientationResult = orientationDetector.detectOrientation(
+      orientationCanvas,
+      "portrait" // Expected default
+    );
+
+    logger?.info("Orientation detected", {
+      detected: orientationResult.detectedOrientation,
+      confidence: orientationResult.confidence,
+      requiresRotation: orientationResult.requiresRotation
+    });
+
+    if(
+      orientationResult.requiresRotation && 
+      orientationResult.confidence >= SCANNER_CONFIG.orientation.rotationThreshold &&
+      SCANNER_CONFIG.orientation.autoRotateEnabled
+    ){
+      // Auto-rotate the image
+      await autoRotateImage(orientationResult.rotationAngle);
+      toast("Document auto-rotated to correct orientation");
+      setStatus("Document rotated. 4 corners detected. Drag to adjust if needed.", 55);
+    }else{
+      setStatus("4 corners detected. Drag them to the exact document corners.", 45);
+    }
+  }catch(e){
+    logger?.warn("Orientation detection failed", {error: e.message});
+    // Continue without rotation - not a critical failure
+    setStatus("4 corners detected. Drag them to the exact document corners.", 45);
+  }
+}
+
+async function autoRotateImage(angle){
+  if(!orientationDetector || !currentImage){
+    return;
+  }
+
+  try{
+    // Rotate the source canvas
+    const rotatedCanvas = await orientationDetector.rotateCanvas(sourceCanvas, angle);
+    
+    // Update the display
+    const ctx = sourceCanvas.getContext("2d");
+    sourceCanvas.width = rotatedCanvas.width;
+    sourceCanvas.height = rotatedCanvas.height;
+    ctx.drawImage(rotatedCanvas, 0, 0);
+    
+    // Update the layout
+    editor.style.aspectRatio = `${sourceCanvas.width}/${sourceCanvas.height}`;
+    svg.setAttribute("viewBox", `0 0 ${sourceCanvas.width} ${sourceCanvas.height}`);
+    
+    // Re-detect corners on rotated image
+    await autoDetect();
+  }catch(e){
+    logger?.error("Auto-rotation failed", {error: e.message});
+    toast("Could not rotate image");
   }
 }
 
@@ -410,41 +594,58 @@ function quadSize(){
 }
 
 async function enhanceDocument(out){
-  // Keep the original color information, but improve local contrast and
-  // text sharpness. This is intentionally moderate so stamps, signatures
-  // and colored government forms are not destroyed.
+  // Use the new EnhancementEngine for better, more modular enhancement
+  if(!enhancementEngine){
+    // Fallback to original simple enhancement if engine not ready
+    const denoised=new cv.Mat();
+    const blurred=new cv.Mat();
+    const sharpened=new cv.Mat();
 
-  const denoised=new cv.Mat();
-  const blurred=new cv.Mat();
-  const sharpened=new cv.Mat();
+    try{
+      cv.GaussianBlur(out,denoised,new cv.Size(3,3),0);
+      cv.addWeighted(out,1.45,denoised,-0.45,0,sharpened);
+      return sharpened.clone();
+    }finally{
+      denoised.delete();
+      blurred.delete();
+      sharpened.delete();
+    }
+  }
 
   try{
-    cv.GaussianBlur(
-      out,
-      denoised,
-      new cv.Size(3,3),
-      0
-    );
-
-    // Unsharp masking: original + a small amount of high-frequency detail.
-    cv.addWeighted(
-      out,
-      1.45,
-      denoised,
-      -0.45,
-      0,
-      sharpened
-    );
-
-    return sharpened.clone();
-  }finally{
-    denoised.delete();
-    blurred.delete();
-    sharpened.delete();
+    const profile = SCANNER_CONFIG.scanModes[appState?.currentScanMode || 'document'];
+    const enhancementProfile = SCANNER_CONFIG.compressionProfiles[profile?.enhancementProfile || 'balanced'];
+    
+    // Apply enhancement based on scan mode
+    return enhancementEngine.enhanceDocument(out, {
+      mode: profile?.enhancementProfile || 'balanced',
+      enableShadowRemoval: true,
+      enableSharpening: true,
+      enableNoiseReduction: true,
+      enableContrastBoost: profile?.contrastBoost ? true : false,
+      contrastBoost: profile?.contrastBoost || 1.2
+    });
+  }catch(e){
+    logger?.warn("Enhancement error", {error: e.message});
+    // Fallback to simple sharpening
+    const denoised=new cv.Mat();
+    const sharpened=new cv.Mat();
+    try{
+      cv.GaussianBlur(out,denoised,new cv.Size(3,3),0);
+      cv.addWeighted(out,1.45,denoised,-0.45,0,sharpened);
+      return sharpened.clone();
+    }finally{
+      denoised.delete();
+      sharpened.delete();
+    }
   }
 }
 
 function formatBytes(bytes){
+  if(compressionProfiles){
+    return compressionProfiles.formatBytes(bytes);
+  }
+  // Fallback
   if(bytes < 1024) return `${bytes} B`;
   if(bytes < 1024*1024) return `${(bytes/1024).toFixed(1)} KB`;
   return `${(bytes/(1024*1024)).toFixed(2)} MB`;
@@ -460,7 +661,7 @@ async function canvasToBlob(canvas,quality){
   });
 }
 
-async function buildScanVariants(){
+async function buildScanVariants(profileName = 'balanced'){
   const {w,h}=quadSize();
   const mat=sourceMat();
   const srcTri=cv.matFromArray(4,1,cv.CV_32FC2,[
@@ -487,7 +688,10 @@ async function buildScanVariants(){
 
     const enhanced=await enhanceDocument(out);
     try{
-      const MAX_OUTPUT_SIDE=1800;
+      // Use compression profile to determine final size
+      const profile = compressionProfiles ? compressionProfiles.getProfile(profileName) : null;
+      const MAX_OUTPUT_SIDE = profile?.resizeThreshold || 1800;
+      
       const resizeScale=Math.min(1,MAX_OUTPUT_SIDE/Math.max(enhanced.cols,enhanced.rows));
       const finalW=Math.max(1,Math.round(enhanced.cols*resizeScale));
       const finalH=Math.max(1,Math.round(enhanced.rows*resizeScale));
@@ -500,12 +704,26 @@ async function buildScanVariants(){
           enhanced.copyTo(resized);
         }
 
+        // Apply quality validation
         const optimizedCanvas=document.createElement("canvas");
         optimizedCanvas.width=finalW;
         optimizedCanvas.height=finalH;
         cv.imshow(optimizedCanvas,resized);
 
-        const optimizedBlob=await canvasToBlob(optimizedCanvas,0.78);
+        // Validate quality if service available
+        let qualityResult = null;
+        if(qualityValidator){
+          qualityResult = qualityValidator.validateImage(optimizedCanvas);
+          logger?.info("Quality validation", {
+            isAcceptable: qualityResult.isAcceptable,
+            blur: qualityResult.blurScore,
+            readability: qualityResult.readabilityScore
+          });
+        }
+
+        // Use appropriate compression quality from profile
+        const jpegQuality = profile?.jpegQuality || 0.78;
+        const optimizedBlob=await canvasToBlob(optimizedCanvas, jpegQuality);
 
         return {
           rawBlob,
@@ -513,7 +731,9 @@ async function buildScanVariants(){
           width:finalW,
           height:finalH,
           rawWidth:w,
-          rawHeight:h
+          rawHeight:h,
+          qualityResult,
+          profileName
         };
       }finally{
         resized.delete();
@@ -537,7 +757,7 @@ optimizeBtn.onclick=async()=>{
   setStatus("Enhancing text and compressing image…",70);
 
   try{
-    const result=await buildScanVariants();
+    const result=await buildScanVariants(selectedCompressionProfile);
     pendingOptimized=result;
 
     beforeSizeEl.textContent=formatBytes(result.rawBlob.size);
@@ -552,7 +772,17 @@ optimizeBtn.onclick=async()=>{
       `${formatBytes(saved)} smaller (${pct}% reduction)`;
 
     sizeInfo.classList.add("show");
-    setStatus("Optimization complete. Review the size, then save the page.",90);
+    
+    // Display quality feedback
+    if(result.qualityResult){
+      displayQualityFeedback(result.qualityResult);
+      
+      if(!result.qualityResult.isAcceptable){
+        toast("⚠️ " + result.qualityResult.getDetailedReason());
+      }
+    }
+    
+    setStatus("Optimization complete. Review the size and quality, then save the page.",90);
     toast("Image enhanced and compressed");
   }catch(e){
     console.error(e);
@@ -580,7 +810,8 @@ $("saveSelection").onclick=async()=>{
     const blob=result.optimizedBlob;
     const url=URL.createObjectURL(blob);
 
-    pages.push({
+    // Create page with enhanced metadata
+    const page = {
       id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),
       blob,
       url,
@@ -589,9 +820,27 @@ $("saveSelection").onclick=async()=>{
       rotation:0,
       name:currentFileName||("page-"+(pages.length+1)),
       originalSize:result.rawBlob.size,
-      compressedSize:result.optimizedBlob.size
-    });
+      compressedSize:result.optimizedBlob.size,
+      // Enhanced metadata
+      scanMode: appState?.currentScanMode || "document",
+      qualityScore: result.qualityResult ? {
+        blur: result.qualityResult.blurScore,
+        focus: result.qualityResult.focusScore,
+        noise: result.qualityResult.noiseScore,
+        readability: result.qualityResult.readabilityScore,
+        isAcceptable: result.qualityResult.isAcceptable
+      } : null,
+      compressionProfile: result.profileName || "balanced",
+      metadata: {
+        capturedAt: new Date().toISOString(),
+        autoDetected: detectedCorners.length > 0,
+        autoRotated: false, // Will be updated by auto-rotation logic
+        enhanced: true,
+        ocrData: null
+      }
+    };
 
+    pages.push(page);
     renderPages();
 
     // Reset optimization UI state for the saved page.

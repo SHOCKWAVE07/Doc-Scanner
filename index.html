@@ -15,6 +15,17 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <link rel="stylesheet" href="styles.css">
+
+<!-- Configuration and State -->
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+
+<!-- Services -->
+<script src="js/services/quality-validator.js"></script>
+<script src="js/services/orientation-detector.js"></script>
+<script src="js/services/enhancement-engine.js"></script>
+<script src="js/services/compression-profiles.js"></script>
+<script src="js/services/document-processor.js"></script>
 </head>
 
 <body>
@@ -40,6 +51,20 @@
     <div class="drop" id="dropZone">Tap <strong>Add Photos</strong> to select multiple images, or use <strong>Take Photo</strong> on mobile.</div>
     <div class="status" id="status">Loading scanner…</div>
     <div class="progress"><i id="progress"></i></div>
+    
+    <!-- Scan Mode Selector -->
+    <div class="scan-mode-selector" id="scanModeSelector">
+      <label for="scanModeSelect">Scanning mode:</label>
+      <select id="scanModeSelect" class="scan-mode-select">
+        <option value="document" selected>📄 Document (Default)</option>
+        <option value="book">📖 Book</option>
+        <option value="idCard">🆔 ID Card</option>
+        <option value="passport">🛂 Passport</option>
+        <option value="whiteboard">⚪ Whiteboard</option>
+        <option value="photograph">📸 Photograph</option>
+      </select>
+      <span class="mode-hint" id="modeHint">Optimized for regular documents</span>
+    </div>
   </section>
 
   <section class="card" id="selectionCard">
@@ -57,6 +82,43 @@
       <div class="corner" id="c2"><span>3</span></div>
       <div class="corner" id="c3"><span>4</span></div>
     </div>
+
+    <!-- Quality Feedback Display -->
+    <div class="quality-feedback" id="qualityFeedback" style="display:none;">
+      <div class="quality-header">
+        <span class="quality-title">Image Quality</span>
+        <span class="quality-badge" id="qualityBadge">Good</span>
+      </div>
+      <div class="quality-scores">
+        <div class="quality-item">
+          <label>Sharpness</label>
+          <div class="quality-bar">
+            <div class="quality-fill" id="qualityBlur" style="width:0%"></div>
+          </div>
+          <span class="quality-percent" id="qualityBlurPct">0%</span>
+        </div>
+        <div class="quality-item">
+          <label>Readability</label>
+          <div class="quality-bar">
+            <div class="quality-fill" id="qualityReadability" style="width:0%"></div>
+          </div>
+          <span class="quality-percent" id="qualityReadabilityPct">0%</span>
+        </div>
+      </div>
+      <div class="quality-message" id="qualityMessage">Image quality is acceptable</div>
+    </div>
+
+    <!-- Compression Profile Selector -->
+    <div class="compression-selector" id="compressionSelector">
+      <label for="profileSelect">Quality Profile:</label>
+      <select id="profileSelect" class="profile-select">
+        <option value="highQuality">🎨 High Quality (Best readability)</option>
+        <option value="balanced" selected>⚖️ Balanced (Default)</option>
+        <option value="smallSize">📦 Small Size (Smallest file)</option>
+      </select>
+      <span class="profile-hint" id="profileHint">Balanced: good quality & reasonable file size</span>
+    </div>
+
     <div class="editor-actions">
       <button class="btn secondary" id="resetCorners">↺ Reset</button>
       <button class="btn secondary" id="optimizeBtn">✨ Enhance & Compress</button>
