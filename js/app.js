@@ -19,10 +19,12 @@ const scanModeSelector=$("scanModeSelector"), scanModeSelect=$("scanModeSelect")
 const adjustmentsPanel=$("adjustmentsPanel"), resetAdjustmentsBtn=$("resetAdjustments");
 const brightnessSlider=$("brightnessSlider"), contrastSlider=$("contrastSlider"), sharpnessSlider=$("sharpnessSlider"), exposureSlider=$("exposureSlider");
 const brightnessValue=$("brightnessValue"), contrastValue=$("contrastValue"), sharpnessValue=$("sharpnessValue"), exposureValue=$("exposureValue");
+const magnifier=$("magnifier"), magnifierCanvas=$("magnifierCanvas");
 
 let cvReady=false, scanner=null, currentImage=null, currentImageURL=null;
 let fileQueue=[];
 let corners=[], detectedCorners=[], currentFileName="", dragIndex=-1;
+let draggedMidpointIndex=-1; // Track which midpoint is being dragged
 let pages=[], previewIndex=-1;
 let pendingOptimized=null;
 let draggedPageIndex=-1;
@@ -681,6 +683,65 @@ function renderCorners(){
     el.style.left=(p.x/sourceCanvas.width*100)+"%";
     el.style.top=(p.y/sourceCanvas.height*100)+"%";
   });
+  
+  // Render midpoint handles
+  renderMidpoints();
+}
+
+// Calculate and render midpoint handles
+function renderMidpoints(){
+  if(corners.length < 4 || !sourceCanvas.width || !sourceCanvas.height) return;
+  
+  // Midpoints: 0=top, 1=right, 2=bottom, 3=left
+  const midpoints = calculateMidpoints(corners);
+  
+  midpoints.forEach((p, i) => {
+    const el = $("m" + i);
+    if(el){
+      el.style.left = (p.x / sourceCanvas.width * 100) + "%";
+      el.style.top = (p.y / sourceCanvas.height * 100) + "%";
+    }
+  });
+}
+
+// Calculate midpoint positions based on corners
+function calculateMidpoints(corners){
+  const mids = [];
+  // Top midpoint (between c0 and c1)
+  mids.push({x: (corners[0].x + corners[1].x) / 2, y: (corners[0].y + corners[1].y) / 2});
+  // Right midpoint (between c1 and c2)
+  mids.push({x: (corners[1].x + corners[2].x) / 2, y: (corners[1].y + corners[2].y) / 2});
+  // Bottom midpoint (between c2 and c3)
+  mids.push({x: (corners[2].x + corners[3].x) / 2, y: (corners[2].y + corners[3].y) / 2});
+  // Left midpoint (between c3 and c0)
+  mids.push({x: (corners[3].x + corners[0].x) / 2, y: (corners[3].y + corners[0].y) / 2});
+  return mids;
+}
+
+// Update magnifier to show zoomed view at cursor position
+function updateMagnifier(cursorPos){
+  if(!magnifier || !magnifierCanvas || !sourceCanvas) return;
+  
+  const zoomLevel = 3;
+  const magnifierSize = 130;
+  const sourceCtx = sourceCanvas.getContext("2d");
+  
+  magnifierCanvas.width = magnifierSize;
+  magnifierCanvas.height = magnifierSize;
+  const magCtx = magnifierCanvas.getContext("2d");
+  
+  // Calculate source region (what to zoom into)
+  const srcWidth = sourceCanvas.width / zoomLevel;
+  const srcHeight = sourceCanvas.height / zoomLevel;
+  const srcX = Math.max(0, Math.min(sourceCanvas.width - srcWidth, cursorPos.x - srcWidth / 2));
+  const srcY = Math.max(0, Math.min(sourceCanvas.height - srcHeight, cursorPos.y - srcHeight / 2));
+  
+  // Draw zoomed region
+  magCtx.drawImage(
+    sourceCanvas,
+    srcX, srcY, srcWidth, srcHeight,
+    0, 0, magnifierSize, magnifierSize
+  );
 }
 
 function pointerPos(ev){
@@ -731,15 +792,123 @@ for(let i=0;i<4;i++){
   });
 }
 
-editor.addEventListener("pointermove",e=>{
-  if(dragIndex<0) return;
+// Setup midpoint event listeners for 8-point crop refinement
+for(let i=0;i<4;i++){
+  const el=$("m"+i);
+  if(!el) continue;
+  
+  el.addEventListener("pointerdown",e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    draggedMidpointIndex=i;
+    magnifier?.classList.add("active");
+    el.setPointerCapture?.(e.pointerId);
+  });
 
-  corners[dragIndex]=pointerPos(e);
-  renderCorners();
+  el.addEventListener("pointermove",e=>{
+    if(draggedMidpointIndex!==i) return;
+    
+    const pos=pointerPos(e);
+    updateMagnifier(pos);
+    adjustCornersFromMidpoint(i, pos);
+    renderCorners();
+  });
+
+  el.addEventListener("pointerup",e=>{
+    el.releasePointerCapture?.(e.pointerId);
+    draggedMidpointIndex=-1;
+    magnifier?.classList.remove("active");
+  });
+
+  el.addEventListener("pointercancel",()=>{
+    draggedMidpointIndex=-1;
+    magnifier?.classList.remove("active");
+  });
+}
+
+// Adjust corner positions based on midpoint movement
+function adjustCornersFromMidpoint(midpointIndex, newPos){
+  if(corners.length < 4) return;
+  
+  // Map midpoint to adjacent corners
+  const cornerPairs = [
+    [0, 1], // top midpoint affects corners 0 and 1
+    [1, 2], // right midpoint affects corners 1 and 2
+    [2, 3], // bottom midpoint affects corners 2 and 3
+    [3, 0]  // left midpoint affects corners 3 and 0
+  ];
+  
+  const [c1, c2] = cornerPairs[midpointIndex];
+  
+  // Calculate offset from current midpoint to new position
+  const currentMid = {
+    x: (corners[c1].x + corners[c2].x) / 2,
+    y: (corners[c1].y + corners[c2].y) / 2
+  };
+  
+  const offset = {
+    x: newPos.x - currentMid.x,
+    y: newPos.y - currentMid.y
+  };
+  
+  // Move both corners by the offset
+  corners[c1].x += offset.x;
+  corners[c1].y += offset.y;
+  corners[c2].x += offset.x;
+  corners[c2].y += offset.y;
+  
+  // Validate the new configuration
+  if(!isValidQuadrilateral(corners)){
+    // Undo the movement if it creates an invalid geometry
+    corners[c1].x -= offset.x;
+    corners[c1].y -= offset.y;
+    corners[c2].x -= offset.x;
+    corners[c2].y -= offset.y;
+  }
+}
+
+// Validate that the quadrilateral hasn't crossed itself
+function isValidQuadrilateral(pts){
+  if(pts.length !== 4) return false;
+  
+  // Check minimum area (must be at least 10000 pixels)
+  const area = Math.abs(
+    (pts[1].x - pts[0].x) * (pts[2].y - pts[0].y) -
+    (pts[2].x - pts[0].x) * (pts[1].y - pts[0].y)
+  );
+  
+  if(area < 10000) return false;
+  
+  // Check that all points are within canvas bounds
+  for(let p of pts){
+    if(p.x < 0 || p.x > sourceCanvas.width || 
+       p.y < 0 || p.y > sourceCanvas.height){
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+editor.addEventListener("pointermove",e=>{
+  if(dragIndex<0 && draggedMidpointIndex<0) return;
+  
+  const pos = pointerPos(e);
+  
+  if(dragIndex >= 0){
+    corners[dragIndex]=pos;
+    renderCorners();
+  }
+  
+  if(draggedMidpointIndex >= 0){
+    updateMagnifier(pos);
+  }
 });
 
 window.addEventListener("pointerup",()=>{
   dragIndex=-1;
+  draggedMidpointIndex=-1;
+  magnifier?.classList.remove("active");
 });
 
 window.addEventListener("resize",()=>{

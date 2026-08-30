@@ -69,18 +69,29 @@
 
   <section class="card" id="selectionCard">
     <div class="section-title">
-      <h2>Adjust 4-point selection</h2>
-      <span class="hint">Drag 1–4 to exact corners</span>
+      <h2>Adjust 8-point selection</h2>
+      <span class="hint">Drag corners (1–4) or midpoints (⬤) to refine document boundary</span>
     </div>
     <div class="editor-wrap" id="editor">
       <canvas id="sourceCanvas"></canvas>
       <svg id="selectionSvg" preserveAspectRatio="none">
         <polygon id="quad"></polygon>
       </svg>
+      <!-- Corner handles (1-4) -->
       <div class="corner" id="c0"><span>1</span></div>
       <div class="corner" id="c1"><span>2</span></div>
       <div class="corner" id="c2"><span>3</span></div>
       <div class="corner" id="c3"><span>4</span></div>
+      <!-- Midpoint handles (top, right, bottom, left) -->
+      <div class="midpoint" id="m0" title="Top center"></div>
+      <div class="midpoint" id="m1" title="Right center"></div>
+      <div class="midpoint" id="m2" title="Bottom center"></div>
+      <div class="midpoint" id="m3" title="Left center"></div>
+      <!-- Magnifier for precise alignment -->
+      <div class="magnifier" id="magnifier">
+        <canvas id="magnifierCanvas"></canvas>
+        <div class="magnifier-crosshair"></div>
+      </div>
     </div>
 
     <!-- Quality Feedback Display -->
