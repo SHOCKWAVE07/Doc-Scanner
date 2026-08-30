@@ -16,6 +16,9 @@ const qualityFeedback=$("qualityFeedback"), qualityBadge=$("qualityBadge"), qual
 const qualityReadability=$("qualityReadability"), qualityReadabilityPct=$("qualityReadabilityPct"), qualityMessage=$("qualityMessage");
 const compressionSelector=$("compressionSelector"), profileSelect=$("profileSelect"), profileHint=$("profileHint");
 const scanModeSelector=$("scanModeSelector"), scanModeSelect=$("scanModeSelect"), modeHint=$("modeHint");
+const adjustmentsPanel=$("adjustmentsPanel"), resetAdjustmentsBtn=$("resetAdjustments");
+const brightnessSlider=$("brightnessSlider"), contrastSlider=$("contrastSlider"), sharpnessSlider=$("sharpnessSlider"), exposureSlider=$("exposureSlider");
+const brightnessValue=$("brightnessValue"), contrastValue=$("contrastValue"), sharpnessValue=$("sharpnessValue"), exposureValue=$("exposureValue");
 
 let cvReady=false, scanner=null, currentImage=null, currentImageURL=null;
 let fileQueue=[];
@@ -63,6 +66,7 @@ waitForCV().then(()=>{
   
   // Setup UI
   setupProfileSelector();
+  setupAdjustmentSliders();
   
   cvReady=true; 
   scanner=new jscanify();
@@ -112,6 +116,72 @@ function setupProfileSelector(){
   }
 }
 
+function setupAdjustmentSliders(){
+  if(!brightnessSlider) return;
+  
+  // Setup event listeners for real-time preview
+  brightnessSlider.oninput = (e) => {
+    updateAdjustmentValue(brightnessSlider, brightnessValue);
+    if(currentImage && sourceCanvas){
+      applyAdjustments(
+        sourceCanvas,
+        parseInt(brightnessSlider.value),
+        parseInt(contrastSlider.value),
+        parseInt(sharpnessSlider.value),
+        parseInt(exposureSlider.value)
+      );
+      redrawSelection();
+    }
+  };
+  
+  contrastSlider.oninput = (e) => {
+    updateAdjustmentValue(contrastSlider, contrastValue);
+    if(currentImage && sourceCanvas){
+      applyAdjustments(
+        sourceCanvas,
+        parseInt(brightnessSlider.value),
+        parseInt(contrastSlider.value),
+        parseInt(sharpnessSlider.value),
+        parseInt(exposureSlider.value)
+      );
+      redrawSelection();
+    }
+  };
+  
+  sharpnessSlider.oninput = (e) => {
+    updateAdjustmentValue(sharpnessSlider, sharpnessValue);
+    if(currentImage && sourceCanvas){
+      applyAdjustments(
+        sourceCanvas,
+        parseInt(brightnessSlider.value),
+        parseInt(contrastSlider.value),
+        parseInt(sharpnessSlider.value),
+        parseInt(exposureSlider.value)
+      );
+      redrawSelection();
+    }
+  };
+  
+  exposureSlider.oninput = (e) => {
+    updateAdjustmentValue(exposureSlider, exposureValue);
+    if(currentImage && sourceCanvas){
+      applyAdjustments(
+        sourceCanvas,
+        parseInt(brightnessSlider.value),
+        parseInt(contrastSlider.value),
+        parseInt(sharpnessSlider.value),
+        parseInt(exposureSlider.value)
+      );
+      redrawSelection();
+    }
+  };
+  
+  // Reset button
+  resetAdjustmentsBtn.onclick = () => {
+    resetAllAdjustments();
+  };
+}
+
 function displayQualityFeedback(qualityResult){
   if(!qualityFeedback || !qualityResult) return;
   
@@ -152,6 +222,104 @@ function displayQualityFeedback(qualityResult){
   } else {
     qualityMessage.textContent = qualityResult.getDetailedReason() || "Image quality is below recommended threshold";
     qualityMessage.style.color = "orange";
+  }
+}
+
+// Apply image adjustments (brightness, contrast, sharpness, exposure)
+function applyAdjustments(sourceCanvas, brightness, contrast, sharpness, exposure) {
+  if (!sourceCanvas) return;
+  
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = sourceCanvas.width;
+  tempCanvas.height = sourceCanvas.height;
+  const tempCtx = tempCanvas.getContext("2d");
+  
+  // Draw original
+  tempCtx.drawImage(sourceCanvas, 0, 0);
+  
+  // Get image data
+  const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+  const data = imageData.data;
+  
+  // Apply adjustments per pixel
+  for (let i = 0; i < data.length; i += 4) {
+    let r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+    
+    // Brightness (add/subtract)
+    r = Math.max(0, Math.min(255, r + brightness));
+    g = Math.max(0, Math.min(255, g + brightness));
+    b = Math.max(0, Math.min(255, b + brightness));
+    
+    // Contrast (multiply around 128)
+    const contrastFactor = (contrast + 100) / 100;
+    r = Math.max(0, Math.min(255, (r - 128) * contrastFactor + 128));
+    g = Math.max(0, Math.min(255, (g - 128) * contrastFactor + 128));
+    b = Math.max(0, Math.min(255, (b - 128) * contrastFactor + 128));
+    
+    // Exposure (similar to brightness but non-linear)
+    const exposureFactor = exposure / 50;
+    r = Math.max(0, Math.min(255, r * (1 + exposureFactor)));
+    g = Math.max(0, Math.min(255, g * (1 + exposureFactor)));
+    b = Math.max(0, Math.min(255, b * (1 + exposureFactor)));
+    
+    data[i] = r;
+    data[i+1] = g;
+    data[i+2] = b;
+    data[i+3] = a;
+  }
+  
+  // Sharpness via unsharp masking (simplified)
+  if (sharpness > 0) {
+    const sharpAmount = sharpness / 100;
+    tempCtx.putImageData(imageData, 0, 0);
+    
+    // Get blurred copy
+    const blurCanvas = document.createElement("canvas");
+    blurCanvas.width = tempCanvas.width;
+    blurCanvas.height = tempCanvas.height;
+    const blurCtx = blurCanvas.getContext("2d");
+    blurCtx.filter = "blur(2px)";
+    blurCtx.drawImage(tempCanvas, 0, 0);
+    
+    // Blend original with inverted blur to sharpen
+    tempCtx.globalAlpha = sharpAmount;
+    tempCtx.drawImage(tempCanvas, 0, 0);
+    tempCtx.globalAlpha = -sharpAmount / 2;
+    tempCtx.drawImage(blurCanvas, 0, 0);
+    tempCtx.globalAlpha = 1.0;
+  } else {
+    tempCtx.putImageData(imageData, 0, 0);
+  }
+  
+  // Copy back to source
+  const sourceCtx = sourceCanvas.getContext("2d");
+  sourceCtx.clearRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+  sourceCtx.drawImage(tempCanvas, 0, 0);
+}
+
+// Update adjustment value display
+function updateAdjustmentValue(slider, valueDisplay) {
+  valueDisplay.textContent = slider.value;
+}
+
+// Reset all adjustments
+function resetAllAdjustments() {
+  brightnessSlider.value = 0;
+  contrastSlider.value = 0;
+  sharpnessSlider.value = 0;
+  exposureSlider.value = 0;
+  
+  updateAdjustmentValue(brightnessSlider, brightnessValue);
+  updateAdjustmentValue(contrastSlider, contrastValue);
+  updateAdjustmentValue(sharpnessSlider, sharpnessValue);
+  updateAdjustmentValue(exposureSlider, exposureValue);
+  
+  // Re-render canvas
+  if (currentImage && sourceCanvas) {
+    const ctx = sourceCanvas.getContext("2d");
+    ctx.clearRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+    ctx.drawImage(currentImage, 0, 0);
+    redrawSelection();
   }
 }
 

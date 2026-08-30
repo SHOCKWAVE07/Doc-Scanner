@@ -119,6 +119,40 @@
       <span class="profile-hint" id="profileHint">Balanced: good quality & reasonable file size</span>
     </div>
 
+    <!-- Manual Image Adjustments -->
+    <div class="adjustments-panel" id="adjustmentsPanel">
+      <div class="adjustments-header">
+        <h3>Image Adjustments</h3>
+        <button class="btn-icon" id="resetAdjustments" title="Reset all adjustments">↺</button>
+      </div>
+      
+      <div class="adjustment-slider">
+        <label for="brightnessSlider">☀️ Brightness</label>
+        <input type="range" id="brightnessSlider" class="slider" min="-100" max="100" value="0" step="5">
+        <span class="adjustment-value" id="brightnessValue">0</span>
+      </div>
+
+      <div class="adjustment-slider">
+        <label for="contrastSlider">◐ Contrast</label>
+        <input type="range" id="contrastSlider" class="slider" min="-50" max="100" value="0" step="5">
+        <span class="adjustment-value" id="contrastValue">0</span>
+      </div>
+
+      <div class="adjustment-slider">
+        <label for="sharpnessSlider">▲ Sharpness</label>
+        <input type="range" id="sharpnessSlider" class="slider" min="0" max="100" value="0" step="5">
+        <span class="adjustment-value" id="sharpnessValue">0</span>
+      </div>
+
+      <div class="adjustment-slider">
+        <label for="exposureSlider">◉ Exposure</label>
+        <input type="range" id="exposureSlider" class="slider" min="-50" max="50" value="0" step="5">
+        <span class="adjustment-value" id="exposureValue">0</span>
+      </div>
+      
+      <div class="adjustment-note">Adjust values to improve image clarity. Click Reset to undo all changes.</div>
+    </div>
+
     <div class="editor-actions">
       <button class="btn secondary" id="resetCorners">↺ Reset</button>
       <button class="btn secondary" id="optimizeBtn">✨ Enhance & Compress</button>
