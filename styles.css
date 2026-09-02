@@ -46,15 +46,16 @@ input[type=file]{display:none}
 .status-indicator.ready{background:#18a0ff;animation:pulse-ready 0.6s infinite}
 .status-indicator.blurry{background:#ff6b6b;animation:pulse-warn 0.5s infinite}
 .status-text{font-weight:600;color:var(--text)}
-.camera-stage{position:relative;overflow:hidden;margin-top:12px;border-radius:14px;background:#101722;aspect-ratio:16/9;max-height:400px}
+.camera-stage{position:fixed;z-index:60;inset:0;overflow:hidden;background:#101722}
 .camera-stage[hidden]{display:none}
-.camera-stage video{display:block;width:100%;height:100%;object-fit:contain;background:#101722}
+.camera-stage video{display:block;width:100%;height:100%;object-fit:cover;background:#101722}
 .camera-guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .camera-guide:not(.detected):not(.ready){opacity:0}
 .camera-guide polygon{fill:rgba(255,255,255,.04);stroke:#ffd166;stroke-width:1.2;vector-effect:non-scaling-stroke;transition:stroke .2s,fill .2s}
 .camera-guide.detected polygon{fill:rgba(46,204,113,.10);stroke:#2ecc71}
 .camera-guide.ready polygon{fill:rgba(24,160,255,.14);stroke:#18a0ff}
 .camera-guide-label{position:absolute;left:10px;right:10px;bottom:10px;padding:7px 9px;border-radius:8px;background:rgba(0,0,0,.58);color:#fff;text-align:center;font-size:12px;font-weight:700;pointer-events:none}
+.camera-close{position:absolute;z-index:1;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.58);color:#fff;font-size:30px;line-height:1}
 
 @keyframes pulse-idle{0%,100%{opacity:0.6}50%{opacity:1}}
 @keyframes pulse-search{0%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.2)}100%{opacity:1;transform:scale(1)}}

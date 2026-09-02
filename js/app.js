@@ -360,6 +360,7 @@ function setupAutoCapture() {
   const cameraStream = $("cameraStream");
   const previewCanvas = $("previewCanvas");
   const cameraStage = $("cameraStage");
+  const cameraClose = $("cameraClose");
   const cameraGuide = $("cameraGuide");
   const cameraGuidePolygon = $("cameraGuidePolygon");
   const cameraGuideLabel = $("cameraGuideLabel");
@@ -374,8 +375,15 @@ function setupAutoCapture() {
       return;
     }
 
+    // The live feed uses object-fit: cover, so map source-frame coordinates
+    // into the visible (possibly cropped) viewport before drawing the guide.
+    const stageWidth = cameraStage.clientWidth;
+    const stageHeight = cameraStage.clientHeight;
+    const scale = Math.max(stageWidth / frame.canvas.width, stageHeight / frame.canvas.height);
+    const offsetX = (stageWidth - frame.canvas.width * scale) / 2;
+    const offsetY = (stageHeight - frame.canvas.height * scale) / 2;
     const points = frame.detectedCorners.map((point) => (
-      `${(point.x / frame.canvas.width) * 100},${(point.y / frame.canvas.height) * 100}`
+      `${((point.x * scale + offsetX) / stageWidth) * 100},${((point.y * scale + offsetY) / stageHeight) * 100}`
     )).join(" ");
     cameraGuidePolygon.setAttribute("points", points);
     cameraGuide.classList.add("detected");
@@ -402,15 +410,20 @@ function setupAutoCapture() {
     });
   }
 
+  function stopCameraSession() {
+    autoCaptureManager.disable();
+    cameraStreamManager.stop();
+    cameraStage.hidden = true;
+    autoCaptureToggle.checked = false;
+    autoCaptureStatus.style.display = "none";
+  }
+
   // Auto capture toggle handler
   if (autoCaptureToggle) {
     autoCaptureToggle.addEventListener("change", async (e) => {
       if (e.target.checked) {
         try {
           await setupCameraPreview(cameraStream, previewCanvas);
-          // Keep the live preview compact even when a phone reports a portrait
-          // camera stream. The video itself remains fully visible via object-fit.
-          cameraStage.style.removeProperty("aspect-ratio");
           cameraStage.hidden = false;
           cameraStreamManager.start(async (frame) => {
             latestCameraFrame = frame.canvas;
@@ -438,13 +451,17 @@ function setupAutoCapture() {
           logger.warn("Auto Capture camera start failed", { error: error.message });
         }
       } else {
-        autoCaptureManager.disable();
-        cameraStreamManager.stop();
-        cameraStage.hidden = true;
-        autoCaptureStatus.style.display = "none";
+        stopCameraSession();
         toast("Auto Capture disabled");
         logger.info("Auto Capture disabled");
       }
+    });
+  }
+
+  if (cameraClose) {
+    cameraClose.addEventListener("click", () => {
+      stopCameraSession();
+      toast("Auto Capture disabled");
     });
   }
 
@@ -473,11 +490,7 @@ function setupAutoCapture() {
 
     // A document stays stable in view after capture. End this one-shot camera
     // session so it cannot add the same page again on the next stable frames.
-    autoCaptureManager.disable();
-    cameraStreamManager.stop();
-    cameraStage.hidden = true;
-    autoCaptureToggle.checked = false;
-    autoCaptureStatus.style.display = "none";
+    stopCameraSession();
     toast("Document captured");
   });
 
@@ -1129,6 +1142,7 @@ async function autoRotateImage(angle){
   }finally{
     isAutoRotating=false;
   }
+
 }
 
 function renderCorners(){
