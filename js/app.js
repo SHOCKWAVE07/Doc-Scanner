@@ -35,6 +35,8 @@ let selectedCompressionProfile = "balanced";
 
 // Initialize services
 let logger, qualityValidator, orientationDetector, enhancementEngine, compressionProfiles;
+let stabilityDetector, autoCaptureManager, cameraStreamManager;
+let cropUIManager, magnifierUI;
 let appState;
 
 function setStatus(s,p=null){
@@ -64,11 +66,22 @@ waitForCV().then(()=>{
   orientationDetector = new OrientationDetector(SCANNER_CONFIG);
   enhancementEngine = new EnhancementEngine(SCANNER_CONFIG);
   compressionProfiles = new CompressionProfiles(SCANNER_CONFIG);
+  
+  // Phase 2 Services
+  stabilityDetector = new StabilityDetector(SCANNER_CONFIG);
+  autoCaptureManager = new AutoCaptureManager(SCANNER_CONFIG);
+  cameraStreamManager = new CameraStreamManager(SCANNER_CONFIG);
+  
+  // Phase 3 UI Managers
+  cropUIManager = new CropUIManager(SCANNER_CONFIG);
+  magnifierUI = new MagnifierUI(SCANNER_CONFIG);
+  
   appState = new ApplicationState();
   
   // Setup UI
   setupProfileSelector();
   setupAdjustmentSliders();
+  setupAutoCapture();
   
   cvReady=true; 
   scanner=new jscanify();
@@ -304,7 +317,6 @@ function updateAdjustmentValue(slider, valueDisplay) {
   valueDisplay.textContent = slider.value;
 }
 
-// Reset all adjustments
 function resetAllAdjustments() {
   brightnessSlider.value = 0;
   contrastSlider.value = 0;
@@ -323,6 +335,271 @@ function resetAllAdjustments() {
     ctx.drawImage(currentImage, 0, 0);
     redrawSelection();
   }
+}
+
+// Redraw selection handles and SVG
+function redrawSelection() {
+  renderCorners();
+}
+
+// Setup Auto Capture (Phase 2)
+function setupAutoCapture() {
+  const autoCaptureToggle = $("autoCaptureToggle");
+  const autoCaptureStatus = $("autoCaptureStatus");
+  const statusIndicator = $("statusIndicator");
+  const statusText = $("statusText");
+  const cameraStream = $("cameraStream");
+  const previewCanvas = $("previewCanvas");
+
+  // Initialize magnifier UI
+  if (magnifier) {
+    magnifierUI.initialize(magnifier);
+    magnifierUI.enablePinchZoom((zoomLevel) => {
+      logger.info("Magnifier zoom changed", { zoomLevel });
+    });
+  }
+
+  // Initialize crop UI manager with callback
+  if (sourceCanvas && svg && quadEl) {
+    cropUIManager.setOnCropChange((newCorners) => {
+      corners = newCorners;
+      // Update quality feedback
+      if (sourceCanvas) {
+        const quality = qualityValidator.validateImage(sourceCanvas);
+        displayQualityFeedback(quality);
+      }
+    });
+  }
+
+  // Auto capture toggle handler
+  if (autoCaptureToggle) {
+    autoCaptureToggle.addEventListener("change", (e) => {
+      if (e.target.checked) {
+        autoCaptureManager.enable();
+        autoCaptureStatus.style.display = "flex";
+        toast("Auto Capture enabled");
+        logger.info("Auto Capture enabled");
+      } else {
+        autoCaptureManager.disable();
+        autoCaptureStatus.style.display = "none";
+        toast("Auto Capture disabled");
+        logger.info("Auto Capture disabled");
+      }
+    });
+  }
+
+  // Auto capture callbacks
+  autoCaptureManager.setOnCapture(async () => {
+    logger.info("Auto capture triggered");
+    if (statusIndicator) statusIndicator.classList.remove("searching", "detected", "unstable");
+    
+    if (fileQueue.length > 0 && !currentImage) {
+      const next = fileQueue.shift();
+      if (next) {
+        await openForSelection(next);
+      }
+    } else if (currentImage && corners.length === 4) {
+      // Auto-crop and add to pages
+      await addCurrentPage();
+    }
+  });
+
+  autoCaptureManager.setOnStatusChange((status) => {
+    updateAutoCaptureStatus(status, statusIndicator, statusText, statusEl);
+  });
+
+  // Initialize camera stream manager for future use (Phase 2 preview)
+  if (cameraStream && previewCanvas) {
+    setupCameraPreview(cameraStream, previewCanvas);
+  }
+}
+
+// Update UI based on auto capture status
+function updateAutoCaptureStatus(status, statusIndicator, statusText, statusEl) {
+  const message = autoCaptureManager.getStatusMessage();
+  
+  // Update status display
+  if (statusEl) {
+    statusEl.textContent = message;
+    
+    // Update CSS class for styling
+    statusEl.className = "status";
+    switch (status) {
+      case "SEARCHING":
+        statusEl.classList.add("searching");
+        break;
+      case "DOCUMENT_DETECTED":
+        statusEl.classList.add("document_detected");
+        break;
+      case "UNSTABLE":
+        statusEl.classList.add("unstable");
+        break;
+      case "READY":
+        statusEl.classList.add("ready");
+        break;
+      case "BLURRY":
+        statusEl.classList.add("blurry");
+        break;
+      case "CAPTURED":
+        statusEl.classList.add("captured");
+        break;
+    }
+  }
+
+  // Update status indicator
+  if (statusIndicator) {
+    statusIndicator.className = "status-indicator";
+    statusIndicator.classList.add(status.toLowerCase());
+  }
+
+  if (statusText) {
+    statusText.textContent = message;
+  }
+
+  logger.debug("Auto capture status changed", { status, message });
+}
+
+// Setup camera preview (Phase 2 enhancement)
+async function setupCameraPreview(videoElement, previewCanvas) {
+  // This can be called later to enable camera preview with live detection
+  // For now, it's set up but not automatically activated
+  try {
+    await cameraStreamManager.initialize(videoElement, previewCanvas, scanner);
+    logger.info("Camera preview initialized");
+  } catch (e) {
+    logger.warn("Camera preview initialization failed", { error: e.message });
+  }
+}
+
+// Add current page to document
+async function addCurrentPage() {
+  if (!currentImage || !corners || corners.length !== 4) {
+    toast("Please adjust document boundaries first");
+    return;
+  }
+
+  setStatus("Processing document…", 50);
+
+  try {
+    // Perform perspective correction
+    const processedImage = await perspectiveCorrect(sourceCanvas, corners);
+
+    // Apply auto enhancements
+    const enhanced = enhancementEngine.enhance(processedImage, appState.currentScanMode || "document");
+
+    // Validate quality
+    const quality = qualityValidator.validateImage(enhanced.canvas);
+    
+    if (!quality.isAcceptable) {
+      logger.warn("Document quality below threshold", { quality });
+      toast("Document quality is below threshold. Please retake image.");
+      return;
+    }
+
+    // Get selected compression profile
+    const profile = compressionProfiles.getProfile(selectedCompressionProfile);
+
+    // Compress image
+    const compressed = await compressImage(enhanced.canvas, profile.jpegQuality);
+
+    // Create page object
+    const pageId = Date.now() + Math.random().toString(36).slice(2, 9);
+    const page = {
+      id: pageId,
+      blob: compressed.blob,
+      url: URL.createObjectURL(compressed.blob),
+      w: enhanced.canvas.width,
+      h: enhanced.canvas.height,
+      rotation: 0,
+      name: `Page ${pages.length + 1}`,
+      quality: quality,
+    };
+
+    pages.push(page);
+    renderPages();
+    setStatus(`Added: ${page.name}`, 100);
+    toast(`${page.name} added (${(page.blob.size / 1024).toFixed(0)} KB)`);
+
+    logger.info("Page added", { pageId, size: page.blob.size, quality });
+
+    // Clear for next image if in queue
+    if (fileQueue.length > 0) {
+      const next = fileQueue.shift();
+      await openForSelection(next);
+    } else {
+      currentImage = null;
+      selectionCard.style.display = "none";
+    }
+  } catch (e) {
+    logger.error("Failed to add page", { error: e.message });
+    toast("Error processing image: " + e.message);
+    setStatus("Error: " + e.message, 0);
+  }
+}
+
+// Perspective correction using corners
+async function perspectiveCorrect(canvas, corners) {
+  return new Promise((resolve) => {
+    const src = cv.imread(canvas);
+    const dst = new cv.Mat();
+    
+    // Create source points from corners
+    const srcPoints = cv.matFromArray(4, 1, cv.CV_32F, [
+      corners[0].x, corners[0].y,
+      corners[1].x, corners[1].y,
+      corners[2].x, corners[2].y,
+      corners[3].x, corners[3].y,
+    ]);
+
+    // Create destination points (full image size)
+    const w = Math.max(
+      Math.hypot(corners[1].x - corners[0].x, corners[1].y - corners[0].y),
+      Math.hypot(corners[2].x - corners[3].x, corners[2].y - corners[3].y)
+    );
+    const h = Math.max(
+      Math.hypot(corners[3].x - corners[0].x, corners[3].y - corners[0].y),
+      Math.hypot(corners[2].x - corners[1].x, corners[2].y - corners[1].y)
+    );
+
+    const dstPoints = cv.matFromArray(4, 1, cv.CV_32F, [
+      0, 0,
+      w, 0,
+      w, h,
+      0, h,
+    ]);
+
+    try {
+      const M = cv.getPerspectiveTransform(srcPoints, dstPoints);
+      cv.warpPerspective(src, dst, M, new cv.Size(w, h));
+
+      // Create result canvas
+      const resultCanvas = document.createElement("canvas");
+      resultCanvas.width = w;
+      resultCanvas.height = h;
+      cv.imshow(resultCanvas, dst);
+
+      M.delete();
+      resolve(resultCanvas);
+    } finally {
+      src.delete();
+      dst.delete();
+      srcPoints.delete();
+      dstPoints.delete();
+    }
+  });
+}
+
+// Compress image to blob
+async function compressImage(canvas, quality = 0.78) {
+  return new Promise((resolve) => {
+    canvas.toBlob(
+      (blob) => {
+        resolve({ blob, size: blob.size });
+      },
+      "image/jpeg",
+      quality
+    );
+  });
 }
 
 cameraBtn.onclick=()=>cameraInput.click();
@@ -396,6 +673,18 @@ function drawSource(){
   // handles cannot use a different coordinate system.
   editor.style.aspectRatio=`${sourceCanvas.width}/${sourceCanvas.height}`;
   svg.setAttribute("viewBox",`0 0 ${sourceCanvas.width} ${sourceCanvas.height}`);
+  
+  // Initialize 8-point crop UI (Phase 3)
+  if (cropUIManager && sourceCanvas && svg && quadEl && magnifier) {
+    const defaultCorners = [
+      {x: sourceCanvas.width * 0.06, y: sourceCanvas.height * 0.06},
+      {x: sourceCanvas.width * 0.94, y: sourceCanvas.height * 0.06},
+      {x: sourceCanvas.width * 0.94, y: sourceCanvas.height * 0.94},
+      {x: sourceCanvas.width * 0.06, y: sourceCanvas.height * 0.94}
+    ];
+    cropUIManager.initialize(sourceCanvas, svg, quadEl, defaultCorners, magnifier);
+  }
+  
   requestAnimationFrame(renderCorners);
 }
 
@@ -564,6 +853,11 @@ function autoDetect(){
       detectedCorners=detected;
       corners=detected.map(p=>({...p}));
 
+      // Update crop UI manager with detected corners (Phase 3)
+      if (cropUIManager) {
+        cropUIManager.setCorners(corners);
+      }
+
       renderCorners();
       setStatus(
         "4 corners detected. Drag them to the exact document corners.",
@@ -576,6 +870,11 @@ function autoDetect(){
       detectedCorners=[];
       corners=defaultCorners();
 
+      // Update crop UI manager with default corners (Phase 3)
+      if (cropUIManager) {
+        cropUIManager.setCorners(corners);
+      }
+
       renderCorners();
       setStatus(
         "No reliable document boundary found. Set the 4 points manually.",
@@ -587,6 +886,11 @@ function autoDetect(){
 
     detectedCorners=[];
     corners=defaultCorners();
+
+    // Update crop UI manager with default corners (Phase 3)
+    if (cropUIManager) {
+      cropUIManager.setCorners(corners);
+    }
 
     renderCorners();
     setStatus("Detection failed. Set the 4 points manually.",35);
@@ -670,22 +974,25 @@ async function autoRotateImage(angle){
 function renderCorners(){
   if(!corners.length || !sourceCanvas.width || !sourceCanvas.height) return;
 
-  quadEl.setAttribute(
-    "points",
-    corners.map(p=>`${p.x},${p.y}`).join(" ")
-  );
+  // Use CropUIManager for rendering if available (Phase 3)
+  if (cropUIManager && sourceCanvas && svg && quadEl && magnifier) {
+    cropUIManager.setCorners(corners);
+    cropUIManager.render();
+  } else {
+    // Fallback: Legacy rendering
+    quadEl.setAttribute(
+      "points",
+      corners.map(p=>`${p.x},${p.y}`).join(" ")
+    );
 
-  corners.forEach((p,i)=>{
-    const el=$("c"+i);
-
-    // Percentages are relative to the editor, which is shrink-wrapped
-    // to the canvas.
-    el.style.left=(p.x/sourceCanvas.width*100)+"%";
-    el.style.top=(p.y/sourceCanvas.height*100)+"%";
-  });
-  
-  // Render midpoint handles
-  renderMidpoints();
+    corners.forEach((p,i)=>{
+      const el=$("c"+i);
+      el.style.left=(p.x/sourceCanvas.width*100)+"%";
+      el.style.top=(p.y/sourceCanvas.height*100)+"%";
+    });
+    
+    renderMidpoints();
+  }
 }
 
 // Calculate and render midpoint handles

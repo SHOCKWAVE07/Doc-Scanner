@@ -26,6 +26,11 @@
 <script src="js/services/enhancement-engine.js"></script>
 <script src="js/services/compression-profiles.js"></script>
 <script src="js/services/document-processor.js"></script>
+<script src="js/services/stability-detector.js"></script>
+<script src="js/services/auto-capture-manager.js"></script>
+<script src="js/services/camera-stream-manager.js"></script>
+<script src="js/ui/crop-ui-manager.js"></script>
+<script src="js/ui/magnifier-ui.js"></script>
 </head>
 
 <body>
@@ -51,6 +56,23 @@
     <div class="drop" id="dropZone">Tap <strong>Add Photos</strong> to select multiple images, or use <strong>Take Photo</strong> on mobile.</div>
     <div class="status" id="status">Loading scanner…</div>
     <div class="progress"><i id="progress"></i></div>
+    
+    <!-- Auto Capture Controls -->
+    <div class="auto-capture-controls" id="autoCaptureControls">
+      <label class="toggle-label">
+        <input type="checkbox" id="autoCaptureToggle" class="toggle-checkbox">
+        <span class="toggle-switch"></span>
+        <span class="toggle-text">Auto Capture</span>
+      </label>
+      <div class="auto-capture-status" id="autoCaptureStatus" style="display:none;">
+        <div class="status-indicator" id="statusIndicator"></div>
+        <span class="status-text" id="statusText">Ready</span>
+      </div>
+    </div>
+
+    <!-- Hidden Camera & Preview Elements -->
+    <video id="cameraStream" style="display:none;" playsinline autoplay muted></video>
+    <canvas id="previewCanvas" style="display:none;"></canvas>
     
     <!-- Scan Mode Selector -->
     <div class="scan-mode-selector" id="scanModeSelector">
