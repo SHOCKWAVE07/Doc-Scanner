@@ -387,10 +387,22 @@ class CropUIManager {
     const zoomLevel = 3; // 3x magnification
     const magnifierSize = 110; // pixels
 
-    // Keep the bubble in the centre of the editor so it never sits under the
-    // finger that is moving a crop handle. Its contents still follow the handle.
-    this.magnifier.style.left = "50%";
-    this.magnifier.style.top = "50%";
+    // Float the magnifier close to the active handle, moving it to the other
+    // side when needed so it remains easy to see and does not run off-screen.
+    const editorRect = this.magnifier.parentElement.getBoundingClientRect();
+    const gap = 20;
+    let left = clientX - editorRect.left + gap;
+    let top = clientY - editorRect.top - magnifierSize - gap;
+
+    if (left + magnifierSize > editorRect.width) {
+      left = clientX - editorRect.left - magnifierSize - gap;
+    }
+    if (top < 0) {
+      top = clientY - editorRect.top + gap;
+    }
+
+    this.magnifier.style.left = `${Math.max(0, left)}px`;
+    this.magnifier.style.top = `${Math.max(0, top)}px`;
 
     // Calculate source region
     const canvasX = ((clientX - rect.left) / rect.width) * this.canvas.width;

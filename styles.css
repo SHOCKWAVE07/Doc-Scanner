@@ -16,7 +16,7 @@ h1{font-size:19px;margin:0}
 .sub{font-size:12px;color:var(--muted);margin-top:2px}
 .count{background:#e9f1ff;color:var(--blue);padding:7px 10px;border-radius:999px;font-weight:800;font-size:12px}
 .card{background:var(--card);border:1px solid #e7ecf3;border-radius:20px;box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
-.toolbar{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toolbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .btn{min-height:48px;border-radius:14px;padding:11px 13px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn.primary{background:var(--blue);color:#fff}
 .btn.secondary{background:#eef4ff;color:var(--blue)}
@@ -46,7 +46,7 @@ input[type=file]{display:none}
 .status-indicator.ready{background:#18a0ff;animation:pulse-ready 0.6s infinite}
 .status-indicator.blurry{background:#ff6b6b;animation:pulse-warn 0.5s infinite}
 .status-text{font-weight:600;color:var(--text)}
-.camera-stage{position:relative;overflow:hidden;margin-top:12px;border-radius:14px;background:#101722;aspect-ratio:16/9;max-height:280px}
+.camera-stage{position:relative;overflow:hidden;margin-top:12px;border-radius:14px;background:#101722;aspect-ratio:16/9;max-height:400px}
 .camera-stage[hidden]{display:none}
 .camera-stage video{display:block;width:100%;height:100%;object-fit:contain;background:#101722}
 .camera-guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
@@ -75,7 +75,7 @@ input[type=file]{display:none}
 .hint{font-size:11px;color:var(--muted)}
 
 #selectionCard{display:none}
-.editor-wrap{position:relative;width:fit-content;max-width:100%;margin:0 auto;background:#101722;border-radius:17px;overflow:hidden;touch-action:none;user-select:none;line-height:0}
+.editor-wrap{position:relative;width:fit-content;max-width:calc(100% - 40px);margin:38px auto;background:#101722;border-radius:17px;overflow:visible;touch-action:none;user-select:none;line-height:0}
 #sourceCanvas{display:block;width:auto;height:auto;max-width:100%;max-height:70vh;object-fit:contain}
 #selectionOverlay{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .corner{position:absolute;width:34px;height:34px;border:3px solid white;background:var(--blue);border-radius:50%;transform:translate(-50%,-50%);z-index:3;box-shadow:0 2px 10px rgba(0,0,0,.35);touch-action:none;cursor:grab;line-height:normal}
@@ -90,8 +90,8 @@ input[type=file]{display:none}
 .midpoint:active{cursor:grabbing;background:#18a0ff}
 
 /* Magnifier for precise alignment */
-.magnifier{position:absolute;left:50%;top:50%;width:110px;height:110px;border:3px solid var(--blue);border-radius:50%;background:white;z-index:4;display:none;box-shadow:0 4px 16px rgba(11,99,246,.3);overflow:hidden;pointer-events:none;opacity:0;transform:translate(-50%,-50%);transition:opacity .2s}
-.magnifier.visible{display:block;opacity:1}
+.magnifier{position:absolute;left:0;top:0;width:110px;height:110px;border:3px solid var(--blue);border-radius:50%;background:white;z-index:4;display:none;box-shadow:0 4px 16px rgba(11,99,246,.3);overflow:hidden;pointer-events:none;opacity:0;transition:opacity .2s}
+.magnifier.visible{display:block;opacity:1;pointer-events:auto}
 .magnifier canvas{width:100%;height:100%;display:block}
 .magnifier-crosshair{position:absolute;inset:0;pointer-events:none}
 .magnifier-crosshair::before{content:'';position:absolute;left:50%;top:0;width:1px;height:100%;background:rgba(11,99,246,.5)}
@@ -193,12 +193,14 @@ input[type=file]{display:none}
 
 @media(max-width:620px){
   .app{padding-left:10px;padding-right:10px}
+  .toolbar{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .toolbar .btn{min-width:0;padding:9px 4px;gap:4px;font-size:11px;white-space:nowrap}
+  .toolbar #importPdfBtn{grid-column:1 / -1;width:calc((100% - 8px) / 2);justify-self:center}
   .pages{grid-template-columns:repeat(2,1fr)}
   .page img{height:145px}
   .compression-selector{grid-template-columns:1fr}
   .profile-hint{grid-column:1;margin-top:0;margin-bottom:-8px;order:3}
 }
 @media(min-width:800px){
-  .toolbar{grid-template-columns:1fr 1fr 1fr}
   .pages{grid-template-columns:repeat(4,1fr)}
 }
