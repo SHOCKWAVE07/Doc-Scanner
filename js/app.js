@@ -364,8 +364,8 @@ function setupAutoCapture() {
     if (!cameraGuide || !cameraGuidePolygon || !frame.canvas) return;
     if (!frame.detectedCorners || frame.detectedCorners.length !== 4) {
       cameraGuide.classList.remove("detected", "ready");
-      cameraGuidePolygon.setAttribute("points", "8,8 92,8 92,92 8,92");
-      cameraGuideLabel.textContent = "Align document inside the guide";
+      cameraGuidePolygon.setAttribute("points", "");
+      cameraGuideLabel.textContent = "Point the camera at a document";
       return;
     }
 
@@ -374,7 +374,7 @@ function setupAutoCapture() {
     )).join(" ");
     cameraGuidePolygon.setAttribute("points", points);
     cameraGuide.classList.add("detected");
-    cameraGuideLabel.textContent = "Hold steady...";
+    cameraGuideLabel.textContent = "Document found — hold steady...";
   }
 
   // Initialize magnifier UI
@@ -452,8 +452,9 @@ function setupAutoCapture() {
         await openForSelection(next);
       }
     } else if (!currentImage && latestCameraFrame) {
+      const capturedFrame = cameraStreamManager.captureFrame() || latestCameraFrame;
       const blob = await new Promise((resolve) => {
-        latestCameraFrame.toBlob(resolve, "image/jpeg", 0.95);
+        capturedFrame.toBlob(resolve, "image/jpeg", 0.95);
       });
       if (!blob) throw new Error("Could not capture a camera frame");
       await openForSelection(new File([blob], `Camera-${Date.now()}.jpg`, { type: "image/jpeg" }));
@@ -462,6 +463,15 @@ function setupAutoCapture() {
       // Auto-crop and add to pages
       await addCurrentPage();
     }
+
+    // A document stays stable in view after capture. End this one-shot camera
+    // session so it cannot add the same page again on the next stable frames.
+    autoCaptureManager.disable();
+    cameraStreamManager.stop();
+    cameraStage.hidden = true;
+    autoCaptureToggle.checked = false;
+    autoCaptureStatus.style.display = "none";
+    toast("Document captured");
   });
 
   autoCaptureManager.setOnStatusChange((status) => {

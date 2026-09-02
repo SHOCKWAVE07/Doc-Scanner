@@ -169,27 +169,21 @@ class CameraStreamManager {
           points.bottomRightCorner,
           points.bottomLeftCorner,
         ]);
-        const area = this.calculateQuadArea(corners);
-        const canvasArea = canvas.width * canvas.height;
-        const areaRatio = area / canvasArea;
-
-        if (corners && areaRatio >= this.config.documentDetection.minAreaRatio) {
-          return {
-            corners,
-            confidence: 0.85,
-          };
-        }
-
+        const confidence = this.getQuadrilateralConfidence(corners, canvas);
         contour.delete();
+
+        if (confidence >= this.config.documentDetection.minConfidence) {
+          return { corners, confidence };
+        }
       }
 
       // Fallback: edge-based detection
       const fallbackCorners = this.fallbackContourCorners(canvas);
       if (fallbackCorners) {
-        return {
-          corners: fallbackCorners,
-          confidence: 0.65,
-        };
+        const confidence = this.getQuadrilateralConfidence(fallbackCorners, canvas);
+        if (confidence >= this.config.documentDetection.minConfidence) {
+          return { corners: fallbackCorners, confidence };
+        }
       }
 
       return { corners: null, confidence: 0 };
@@ -297,7 +291,7 @@ class CameraStreamManager {
    * @private
    */
   calculateQuadArea(quad) {
-    if (quad.length !== 4) return 0;
+    if (!quad || quad.length !== 4) return 0;
     // Shoelace formula
     let area = 0;
     for (let i = 0; i < 4; i++) {
@@ -305,6 +299,72 @@ class CameraStreamManager {
       area += quad[i].x * quad[next].y - quad[next].x * quad[i].y;
     }
     return Math.abs(area) / 2;
+  }
+
+  /**
+   * Score a detected contour as a document-shaped quadrilateral. This rejects
+   * large but irregular contours (hands, tables, screens) before they reach
+   * the auto-capture stability check.
+   * @private
+   */
+  getQuadrilateralConfidence(corners, canvas) {
+    if (!corners || corners.length !== 4) return 0;
+
+    const areaRatio = this.calculateQuadArea(corners) / (canvas.width * canvas.height);
+    if (areaRatio < this.config.documentDetection.minAreaRatio || !this.isConvex(corners)) {
+      return 0;
+    }
+
+    const sides = corners.map((point, index) => {
+      const next = corners[(index + 1) % 4];
+      return Math.hypot(next.x - point.x, next.y - point.y);
+    });
+    const sideRatio = Math.min(...sides) / Math.max(...sides);
+    if (sideRatio < this.config.documentDetection.minSideRatio) return 0;
+
+    const angles = corners.map((point, index) => {
+      const previous = corners[(index + 3) % 4];
+      const next = corners[(index + 1) % 4];
+      const a = { x: previous.x - point.x, y: previous.y - point.y };
+      const b = { x: next.x - point.x, y: next.y - point.y };
+      const cosine = (a.x * b.x + a.y * b.y) / (Math.hypot(a.x, a.y) * Math.hypot(b.x, b.y));
+      return Math.acos(Math.max(-1, Math.min(1, cosine))) * 180 / Math.PI;
+    });
+    const minAngle = this.config.documentDetection.minCornerAngle;
+    const maxAngle = this.config.documentDetection.maxCornerAngle;
+    if (angles.some((angle) => angle < minAngle || angle > maxAngle)) return 0;
+
+    const areaScore = Math.min(1, areaRatio / 0.35);
+    const angleScore = 1 - Math.min(1, angles.reduce((sum, angle) => sum + Math.abs(angle - 90), 0) / (4 * 48));
+    const sideScore = Math.min(1, sideRatio / 0.45);
+    return Math.max(0, Math.min(1, 0.45 + areaScore * 0.2 + angleScore * 0.2 + sideScore * 0.15));
+  }
+
+  isConvex(corners) {
+    let direction = 0;
+    for (let i = 0; i < 4; i++) {
+      const a = corners[i];
+      const b = corners[(i + 1) % 4];
+      const c = corners[(i + 2) % 4];
+      const cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+      if (cross === 0) return false;
+      const nextDirection = Math.sign(cross);
+      if (direction && nextDirection !== direction) return false;
+      direction = nextDirection;
+    }
+    return true;
+  }
+
+  /** Capture a fresh frame only when auto-capture fires. */
+  captureFrame() {
+    if (!this.videoElement || !this.videoElement.videoWidth) return null;
+    const maxWidth = this.config.imageProcessing.maxOutputResolution || 1800;
+    const scale = Math.min(1, maxWidth / this.videoElement.videoWidth);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(this.videoElement.videoWidth * scale);
+    canvas.height = Math.round(this.videoElement.videoHeight * scale);
+    canvas.getContext("2d").drawImage(this.videoElement, 0, 0, canvas.width, canvas.height);
+    return canvas;
   }
 
   /**

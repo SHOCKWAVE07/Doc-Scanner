@@ -8,6 +8,11 @@ const SCANNER_CONFIG = {
   documentDetection: {
     minConfidence: 0.6,
     minAreaRatio: 0.12, // Minimum 12% of image area
+    // A contour must also look like a convex, four-sided document rather than
+    // merely being a large object in the camera view.
+    minCornerAngle: 42,
+    maxCornerAngle: 138,
+    minSideRatio: 0.18,
     jscanifyTimeout: 5000,
   },
 

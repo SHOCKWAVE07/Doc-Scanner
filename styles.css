@@ -50,10 +50,10 @@ input[type=file]{display:none}
 .camera-stage[hidden]{display:none}
 .camera-stage video{display:block;width:100%;height:100%;object-fit:contain;background:#101722}
 .camera-guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.camera-guide:not(.detected):not(.ready){opacity:0}
 .camera-guide polygon{fill:rgba(255,255,255,.04);stroke:#ffd166;stroke-width:1.2;vector-effect:non-scaling-stroke;transition:stroke .2s,fill .2s}
 .camera-guide.detected polygon{fill:rgba(46,204,113,.10);stroke:#2ecc71}
 .camera-guide.ready polygon{fill:rgba(24,160,255,.14);stroke:#18a0ff}
-.camera-guide line{stroke:rgba(255,255,255,.35);stroke-width:.35;vector-effect:non-scaling-stroke}
 .camera-guide-label{position:absolute;left:10px;right:10px;bottom:10px;padding:7px 9px;border-radius:8px;background:rgba(0,0,0,.58);color:#fff;text-align:center;font-size:12px;font-weight:700;pointer-events:none}
 
 @keyframes pulse-idle{0%,100%{opacity:0.6}50%{opacity:1}}
