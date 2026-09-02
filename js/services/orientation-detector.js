@@ -34,22 +34,17 @@ class OrientationDetector {
         return new OrientationResult(expectedOrientation, 0.95, false, 0);
       }
 
-      // Try to detect text orientation via edge analysis
-      const textOrientation = this.detectTextOrientation(canvas);
-
-      if (textOrientation) {
-        const { orientation, confidence, needsRotation, angle } = textOrientation;
-
-        return new OrientationResult(orientation, confidence, needsRotation, angle);
-      }
-
-      // Fallback: Use physical dimensions
+      // A horizontal/vertical edge count cannot distinguish the page's intended
+      // orientation from the canvas orientation.  That used to make a sideways
+      // portrait page look "correct" and prevented auto-rotation.  Use the
+      // expected orientation for this decision; dimensions are reliable for a
+      // 90-degree correction (but deliberately do not guess 180 degrees).
       const detectedOrientation = isPhysicallyLandscape ? "landscape" : "portrait";
       const needsRotation = detectedOrientation !== expectedOrientation;
 
       return new OrientationResult(
         detectedOrientation,
-        0.6,
+        0.95,
         needsRotation,
         needsRotation ? 90 : 0
       );

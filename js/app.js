@@ -408,7 +408,9 @@ function setupAutoCapture() {
       if (e.target.checked) {
         try {
           await setupCameraPreview(cameraStream, previewCanvas);
-          cameraStage.style.aspectRatio = `${cameraStream.videoWidth}/${cameraStream.videoHeight}`;
+          // Keep the live preview compact even when a phone reports a portrait
+          // camera stream. The video itself remains fully visible via object-fit.
+          cameraStage.style.removeProperty("aspect-ratio");
           cameraStage.hidden = false;
           cameraStreamManager.start(async (frame) => {
             latestCameraFrame = frame.canvas;
@@ -1110,9 +1112,9 @@ async function autoRotateImage(angle){
     const rotatedCanvas = await orientationDetector.rotateCanvas(sourceCanvas, angle);
     
     // Update the display
-    const ctx = sourceCanvas.getContext("2d");
     sourceCanvas.width = rotatedCanvas.width;
     sourceCanvas.height = rotatedCanvas.height;
+    const ctx = sourceCanvas.getContext("2d");
     ctx.drawImage(rotatedCanvas, 0, 0);
     
     // Update the layout
