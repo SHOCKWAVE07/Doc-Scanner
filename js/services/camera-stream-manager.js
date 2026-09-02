@@ -26,6 +26,10 @@ class CameraStreamManager {
    */
   async initialize(videoElement, previewCanvas, scanner) {
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Live camera requires HTTPS or localhost in a supported browser.");
+      }
+
       this.videoElement = videoElement;
       this.previewCanvas = previewCanvas;
       this.scanner = scanner;
@@ -157,18 +161,26 @@ class CameraStreamManager {
       // Try jscanify first
       const contour = this.scanner.findPaperContour(canvas);
 
-      if (contour && contour.length === 4) {
-        // Verify it's a valid quadrilateral
-        const area = this.calculateQuadArea(contour);
+      if (contour && !contour.empty()) {
+        const points = this.scanner.getCornerPoints(contour);
+        const corners = this.orderCorners([
+          points.topLeftCorner,
+          points.topRightCorner,
+          points.bottomRightCorner,
+          points.bottomLeftCorner,
+        ]);
+        const area = this.calculateQuadArea(corners);
         const canvasArea = canvas.width * canvas.height;
         const areaRatio = area / canvasArea;
 
-        if (areaRatio >= this.config.documentDetection.minAreaRatio) {
+        if (corners && areaRatio >= this.config.documentDetection.minAreaRatio) {
           return {
-            corners: this.orderCorners(contour),
+            corners,
             confidence: 0.85,
           };
         }
+
+        contour.delete();
       }
 
       // Fallback: edge-based detection

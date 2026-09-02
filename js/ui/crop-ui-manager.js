@@ -385,7 +385,7 @@ class CropUIManager {
 
     const rect = this.canvas.getBoundingClientRect();
     const zoomLevel = 3; // 3x magnification
-    const magnifierSize = 150; // pixels
+    const magnifierSize = 110; // pixels
 
     // Position magnifier
     const editorRect = this.editorRect || this.canvas.getBoundingClientRect();
@@ -396,9 +396,9 @@ class CropUIManager {
     const canvasX = ((clientX - rect.left) / rect.width) * this.canvas.width;
     const canvasY = ((clientY - rect.top) / rect.height) * this.canvas.height;
 
-    const sourceX = Math.max(0, canvasX - magnifierSize / (2 * zoomLevel));
-    const sourceY = Math.max(0, canvasY - magnifierSize / (2 * zoomLevel));
     const sourceSize = magnifierSize / zoomLevel;
+    const sourceX = Math.max(0, Math.min(this.canvas.width - sourceSize, canvasX - sourceSize / 2));
+    const sourceY = Math.max(0, Math.min(this.canvas.height - sourceSize, canvasY - sourceSize / 2));
 
     // Draw magnified region
     const ctx = magnifierCanvas.getContext("2d");

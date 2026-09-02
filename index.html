@@ -74,8 +74,16 @@
       </div>
     </div>
 
-    <!-- Hidden Camera & Preview Elements -->
-    <video id="cameraStream" style="display:none;" playsinline autoplay muted></video>
+    <!-- Live camera preview and alignment guide -->
+    <div class="camera-stage" id="cameraStage" hidden>
+      <video id="cameraStream" playsinline autoplay muted></video>
+      <svg class="camera-guide" id="cameraGuide" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <polygon id="cameraGuidePolygon" points="8,8 92,8 92,92 8,92"></polygon>
+        <line x1="8" y1="50" x2="92" y2="50"></line>
+        <line x1="50" y1="8" x2="50" y2="92"></line>
+      </svg>
+      <div class="camera-guide-label" id="cameraGuideLabel">Align document inside the guide</div>
+    </div>
     <canvas id="previewCanvas" style="display:none;"></canvas>
     
     <!-- Scan Mode Selector -->
@@ -165,25 +173,25 @@
       
       <div class="adjustment-slider">
         <label for="brightnessSlider">☀️ Brightness</label>
-        <input type="range" id="brightnessSlider" class="slider" min="-100" max="100" value="0" step="5">
+        <input type="range" id="brightnessSlider" class="slider" min="-50" max="50" value="0" step="5">
         <span class="adjustment-value" id="brightnessValue">0</span>
       </div>
 
       <div class="adjustment-slider">
         <label for="contrastSlider">◐ Contrast</label>
-        <input type="range" id="contrastSlider" class="slider" min="-50" max="100" value="0" step="5">
+        <input type="range" id="contrastSlider" class="slider" min="-40" max="40" value="0" step="5">
         <span class="adjustment-value" id="contrastValue">0</span>
       </div>
 
       <div class="adjustment-slider">
         <label for="sharpnessSlider">▲ Sharpness</label>
-        <input type="range" id="sharpnessSlider" class="slider" min="0" max="100" value="0" step="5">
+        <input type="range" id="sharpnessSlider" class="slider" min="0" max="50" value="0" step="5">
         <span class="adjustment-value" id="sharpnessValue">0</span>
       </div>
 
       <div class="adjustment-slider">
         <label for="exposureSlider">◉ Exposure</label>
-        <input type="range" id="exposureSlider" class="slider" min="-50" max="50" value="0" step="5">
+        <input type="range" id="exposureSlider" class="slider" min="-25" max="25" value="0" step="5">
         <span class="adjustment-value" id="exposureValue">0</span>
       </div>
       
@@ -224,13 +232,17 @@
 <div class="toast" id="toast"></div>
 
 <div class="modal" id="previewModal">
-  <div class="modal-box">
+  <div class="modal-box preview-box">
     <div class="modal-head">
       <strong id="previewTitle">Page preview</strong>
       <button class="close" id="closePreview">✕</button>
     </div>
-    <img id="previewImage" alt="Page preview">
-    <div class="modal-actions">
+    <div class="preview-image-frame">
+      <img id="previewImage" alt="Page preview">
+    </div>
+    <div class="modal-actions preview-actions">
+      <button class="btn secondary" id="previewEdit">✎ Edit</button>
+      <button class="btn secondary" id="previewOcr">OCR</button>
       <button class="btn secondary" id="previewRotate">↻ Rotate</button>
       <button class="btn danger" id="previewDelete">🗑 Delete</button>
     </div>

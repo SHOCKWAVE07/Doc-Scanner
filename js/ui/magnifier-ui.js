@@ -10,7 +10,7 @@ class MagnifierUI {
     this.magnifierCanvas = null;
     this.isVisible = false;
     this.zoomLevel = 3; // 3x magnification
-    this.magnifierSize = 150; // pixels
+    this.magnifierSize = 110; // pixels
     this.crosshairElement = null;
   }
 
@@ -94,9 +94,11 @@ class MagnifierUI {
     const ctx = this.magnifierCanvas.getContext("2d");
     if (!ctx) return;
 
-    const sourceX = Math.max(0, Math.min(sourceCanvas.width, corner.x) - this.magnifierSize / (2 * this.zoomLevel));
-    const sourceY = Math.max(0, Math.min(sourceCanvas.height, corner.y) - this.magnifierSize / (2 * this.zoomLevel));
     const sourceSize = this.magnifierSize / this.zoomLevel;
+    const centerX = Math.max(0, Math.min(sourceCanvas.width, corner.x));
+    const centerY = Math.max(0, Math.min(sourceCanvas.height, corner.y));
+    const sourceX = Math.max(0, Math.min(sourceCanvas.width - sourceSize, centerX - sourceSize / 2));
+    const sourceY = Math.max(0, Math.min(sourceCanvas.height - sourceSize, centerY - sourceSize / 2));
 
     // Clear canvas
     ctx.clearRect(0, 0, this.magnifierSize, this.magnifierSize);

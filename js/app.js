@@ -249,8 +249,12 @@ function applyAdjustments(sourceCanvas, brightness, contrast, sharpness, exposur
   tempCanvas.height = sourceCanvas.height;
   const tempCtx = tempCanvas.getContext("2d");
   
-  // Draw original
-  tempCtx.drawImage(sourceCanvas, 0, 0);
+  // Always start from the untouched image so slider changes are reversible.
+  if (currentImage) {
+    tempCtx.drawImage(currentImage, 0, 0, sourceCanvas.width, sourceCanvas.height);
+  } else {
+    tempCtx.drawImage(sourceCanvas, 0, 0);
+  }
   
   // Get image data
   const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
@@ -350,7 +354,28 @@ function setupAutoCapture() {
   const statusText = $("statusText");
   const cameraStream = $("cameraStream");
   const previewCanvas = $("previewCanvas");
+  const cameraStage = $("cameraStage");
+  const cameraGuide = $("cameraGuide");
+  const cameraGuidePolygon = $("cameraGuidePolygon");
+  const cameraGuideLabel = $("cameraGuideLabel");
   let latestCameraFrame = null;
+
+  function updateCameraGuide(frame) {
+    if (!cameraGuide || !cameraGuidePolygon || !frame.canvas) return;
+    if (!frame.detectedCorners || frame.detectedCorners.length !== 4) {
+      cameraGuide.classList.remove("detected", "ready");
+      cameraGuidePolygon.setAttribute("points", "8,8 92,8 92,92 8,92");
+      cameraGuideLabel.textContent = "Align document inside the guide";
+      return;
+    }
+
+    const points = frame.detectedCorners.map((point) => (
+      `${(point.x / frame.canvas.width) * 100},${(point.y / frame.canvas.height) * 100}`
+    )).join(" ");
+    cameraGuidePolygon.setAttribute("points", points);
+    cameraGuide.classList.add("detected");
+    cameraGuideLabel.textContent = "Hold steady...";
+  }
 
   // Initialize magnifier UI
   if (magnifier) {
@@ -378,13 +403,21 @@ function setupAutoCapture() {
       if (e.target.checked) {
         try {
           await setupCameraPreview(cameraStream, previewCanvas);
+          cameraStage.style.aspectRatio = `${cameraStream.videoWidth}/${cameraStream.videoHeight}`;
+          cameraStage.hidden = false;
           cameraStreamManager.start(async (frame) => {
             latestCameraFrame = frame.canvas;
+            updateCameraGuide(frame);
             const result = await autoCaptureManager.processFrame(
               frame.canvas,
               frame.detectedCorners,
               frame.confidence
             );
+            if (result.shouldCapture) {
+              cameraGuide.classList.remove("detected");
+              cameraGuide.classList.add("ready");
+              cameraGuideLabel.textContent = "Document aligned. Capturing...";
+            }
             if (result.shouldCapture) await autoCaptureManager.capture();
           });
           autoCaptureManager.enable();
@@ -400,6 +433,7 @@ function setupAutoCapture() {
       } else {
         autoCaptureManager.disable();
         cameraStreamManager.stop();
+        cameraStage.hidden = true;
         autoCaptureStatus.style.display = "none";
         toast("Auto Capture disabled");
         logger.info("Auto Capture disabled");
@@ -491,6 +525,7 @@ async function setupCameraPreview(videoElement, previewCanvas) {
     logger.info("Camera preview initialized");
   } catch (e) {
     logger.warn("Camera preview initialization failed", { error: e.message });
+    throw e;
   }
 }
 
@@ -1458,18 +1493,8 @@ function renderPages(){
     img.onclick=()=>openPreview(i);
     const meta=document.createElement("div"); meta.className="page-meta";
     meta.textContent=`${i+1}. ${p.name}`;
-    const actions=document.createElement("div"); actions.className="page-actions";
-    const prev=makeBtn("👁","Preview","iconbtn");
-    const edit=makeBtn("✎","Edit & Crop","iconbtn");
-    const rot=makeBtn("↻","Rotate","iconbtn");
-    const del=makeBtn("🗑","Delete","iconbtn delete");
-    prev.onclick=()=>openPreview(i);
-    edit.onclick=()=>editPage(i);
-    rot.onclick=()=>rotatePage(i);
-    del.onclick=()=>deletePage(i);
-    actions.append(prev,edit,rot,del);
     card.addEventListener("pointerdown",e=>startPagePointerDrag(i,e));
-    card.append(badge,img,meta,actions); pagesEl.appendChild(card);
+    card.append(badge,img,meta); pagesEl.appendChild(card);
   });
   pageCountEl.textContent=pages.length+" "+(pages.length===1?"page":"pages");
   pdfBtn.disabled=pages.length===0; clearAllBtn.disabled=pages.length===0;
@@ -1723,6 +1748,8 @@ $("closePreview").onclick=closePreview;
 previewModal.onclick=e=>{if(e.target===previewModal)closePreview()};
 $("previewRotate").onclick=()=>{if(previewIndex>=0)rotatePage(previewIndex)};
 $("previewDelete").onclick=()=>{if(previewIndex>=0)deletePage(previewIndex)};
+$("previewEdit").onclick=()=>{if(previewIndex>=0)editPage(previewIndex)};
+$("previewOcr").onclick=()=>{if(previewIndex>=0)runOcr(previewIndex)};
 
 clearAllBtn.onclick=()=>{
   if(!pages.length)return;
