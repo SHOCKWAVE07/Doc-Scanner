@@ -153,13 +153,18 @@ class CameraStreamManager {
    * @returns {Object} - {corners, confidence}
    */
   detectDocument(canvas) {
-    if (!this.scanner) {
+    if (!this.scanner || !window.cv) {
       return { corners: null, confidence: 0 };
     }
 
+    // jscanify expects an OpenCV Mat, whereas the camera preview is an HTML
+    // canvas. Passing the canvas directly throws and previously prevented the
+    // fallback detector from running as well.
+    let source = null;
+    let contour = null;
     try {
-      // Try jscanify first
-      const contour = this.scanner.findPaperContour(canvas);
+      source = cv.imread(canvas);
+      contour = this.scanner.findPaperContour(source);
 
       if (contour && !contour.empty()) {
         const points = this.scanner.getCornerPoints(contour);
@@ -170,27 +175,29 @@ class CameraStreamManager {
           points.bottomLeftCorner,
         ]);
         const confidence = this.getQuadrilateralConfidence(corners, canvas);
-        contour.delete();
-
         if (confidence >= this.config.documentDetection.minConfidence) {
           return { corners, confidence };
         }
       }
-
-      // Fallback: edge-based detection
-      const fallbackCorners = this.fallbackContourCorners(canvas);
-      if (fallbackCorners) {
-        const confidence = this.getQuadrilateralConfidence(fallbackCorners, canvas);
-        if (confidence >= this.config.documentDetection.minConfidence) {
-          return { corners: fallbackCorners, confidence };
-        }
-      }
-
-      return { corners: null, confidence: 0 };
     } catch (e) {
-      console.warn("Document detection error:", e);
-      return { corners: null, confidence: 0 };
+      // A jscanify failure should not disable the OpenCV fallback path.
+      console.warn("Primary document detection error:", e);
+    } finally {
+      if (contour) contour.delete();
+      if (source) source.delete();
     }
+
+    // Fallback: edge-based detection. Keep it outside the primary try/catch
+    // so a primary-detector error cannot skip it.
+    const fallbackCorners = this.fallbackContourCorners(canvas);
+    if (fallbackCorners) {
+      const confidence = this.getQuadrilateralConfidence(fallbackCorners, canvas);
+      if (confidence >= this.config.documentDetection.minConfidence) {
+        return { corners: fallbackCorners, confidence };
+      }
+    }
+
+    return { corners: null, confidence: 0 };
   }
 
   /**
