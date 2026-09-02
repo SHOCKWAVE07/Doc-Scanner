@@ -29,6 +29,7 @@ let pages=[], previewIndex=-1;
 let pendingOptimized=null;
 let draggedPageIndex=-1;
 let pagePointerDrag=null;
+let isAutoRotating=false;
 
 // UI State
 let selectedCompressionProfile = "balanced";
@@ -207,13 +208,17 @@ function displayQualityFeedback(qualityResult){
   let badgeText = "Poor";
   let badgeColor = "red";
   
-  if(qualityResult.readabilityScore >= 0.8){
+  const score = value => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+  const sharpnessScore = score(qualityResult.blurScore);
+  const readabilityScore = score(qualityResult.readabilityScore);
+
+  if(readabilityScore >= 0.8){
     badgeText = "Excellent";
     badgeColor = "green";
-  } else if(qualityResult.readabilityScore >= 0.6){
+  } else if(readabilityScore >= 0.6){
     badgeText = "Good";
     badgeColor = "blue";
-  } else if(qualityResult.readabilityScore >= 0.4){
+  } else if(readabilityScore >= 0.4){
     badgeText = "Fair";
     badgeColor = "orange";
   }
@@ -222,8 +227,8 @@ function displayQualityFeedback(qualityResult){
   qualityBadge.style.color = badgeColor;
   
   // Update progress bars
-  const blurPercent = Math.round(qualityResult.blurScore * 100);
-  const readabilityPercent = Math.round(qualityResult.readabilityScore * 100);
+  const blurPercent = Math.round(sharpnessScore * 100);
+  const readabilityPercent = Math.round(readabilityScore * 100);
   
   qualityBlur.style.width = blurPercent + "%";
   qualityBlurPct.textContent = blurPercent + "%";
@@ -231,7 +236,7 @@ function displayQualityFeedback(qualityResult){
   qualityReadabilityPct.textContent = readabilityPercent + "%";
   
   // Update message
-  if(qualityResult.isAcceptable){
+  if(qualityResult.isAcceptable && readabilityScore >= SCANNER_CONFIG.quality.readabilityThreshold){
     qualityMessage.textContent = "Image quality is acceptable for scanning";
     qualityMessage.style.color = "green";
   } else {
@@ -964,7 +969,7 @@ function defaultCorners(){
   ];
 }
 
-function autoDetect(){
+async function autoDetect({skipOrientation=false}={}){
   if(!scanner || !currentImage || !cvReady) return;
 
   setStatus("Detecting paper…",25);
@@ -1013,7 +1018,9 @@ function autoDetect(){
       );
       
       // Detect orientation and auto-rotate if configured
-      detectAndApplyOrientation(mat);
+      if (!skipOrientation && !isAutoRotating) {
+        await detectAndApplyOrientation(mat);
+      }
     }else{
       detectedCorners=[];
       corners=defaultCorners();
@@ -1093,11 +1100,12 @@ async function detectAndApplyOrientation(mat){
 }
 
 async function autoRotateImage(angle){
-  if(!orientationDetector || !currentImage){
+  if(!orientationDetector || !currentImage || isAutoRotating){
     return;
   }
 
   try{
+    isAutoRotating=true;
     // Rotate the source canvas
     const rotatedCanvas = await orientationDetector.rotateCanvas(sourceCanvas, angle);
     
@@ -1112,10 +1120,12 @@ async function autoRotateImage(angle){
     svg.setAttribute("viewBox", `0 0 ${sourceCanvas.width} ${sourceCanvas.height}`);
     
     // Re-detect corners on rotated image
-    await autoDetect();
+    await autoDetect({skipOrientation:true});
   }catch(e){
     logger?.error("Auto-rotation failed", {error: e.message});
     toast("Could not rotate image");
+  }finally{
+    isAutoRotating=false;
   }
 }
 

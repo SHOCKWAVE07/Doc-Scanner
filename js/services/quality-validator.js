@@ -15,11 +15,18 @@ class QualityValidator {
    */
   validateImage(canvas) {
     try {
+      if (!canvas || !Number.isFinite(canvas.width) || !Number.isFinite(canvas.height) ||
+          canvas.width < 2 || canvas.height < 2) {
+        throw new Error("Image is not ready for quality analysis");
+      }
+
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
+      // detectBlur returns a normalized sharpness score (0 = blurred, 1 = sharp).
+      // Keep blurScore for backwards compatibility with existing callers/UI.
       const blurScore = this.detectBlur(canvas, imageData);
-      const focusScore = 1 - Math.min(1, blurScore / this.config.quality.blurThreshold);
+      const focusScore = blurScore;
       const noiseScore = this.detectNoise(imageData);
       const readabilityScore = this.estimateReadability(
         canvas,
@@ -32,7 +39,7 @@ class QualityValidator {
 
       return new QualityResult(
         isAcceptable,
-        Math.max(0, Math.min(1, 1 - blurScore / 200)),
+        this.toScore(blurScore),
         focusScore,
         noiseScore,
         readabilityScore,
@@ -60,12 +67,13 @@ class QualityValidator {
   detectBlur(canvas, imageData) {
     try {
       // Create a temporary mat for blur detection
-      if (!window.cv) return 0;
+      if (!window.cv) return 0.65;
 
       const src = cv.matFromImageData(imageData);
       const gray = new cv.Mat();
       const laplacian = new cv.Mat();
-      const dst = new cv.Mat();
+      const mean = new cv.Mat();
+      const standardDeviation = new cv.Mat();
 
       try {
         // Convert to grayscale if needed
@@ -79,19 +87,29 @@ class QualityValidator {
         cv.Laplacian(gray, laplacian, cv.CV_64F);
 
         // Calculate variance of Laplacian
-        cv.meanStdDev(laplacian, dst, dst);
-        const laplacianVariance = dst.data64F[1] * dst.data64F[1]; // std^2 = variance
+        // mean and standard deviation must be separate output matrices. Reusing
+        // one matrix here causes OpenCV to produce invalid values on some builds.
+        cv.meanStdDev(laplacian, mean, standardDeviation);
+        const deviation = standardDeviation.data64F[0];
+        const laplacianVariance = deviation * deviation;
 
-        return Math.max(0, 200 - laplacianVariance); // Inverted: high variance = sharp
+        if (!Number.isFinite(laplacianVariance)) return 0.65;
+
+        // Laplacian variance rises with edge detail. A score at/above the
+        // configured threshold is sharp enough for a document scan.
+        return this.toScore(laplacianVariance / this.config.quality.blurThreshold);
       } finally {
         src.delete();
         gray.delete();
         laplacian.delete();
-        dst.delete();
+        mean.delete();
+        standardDeviation.delete();
       }
     } catch (e) {
       console.warn("Blur detection failed:", e);
-      return 50; // Default middle value
+      // Do not incorrectly label an otherwise valid image as poor merely
+      // because an optional OpenCV metric could not be read.
+      return 0.65;
     }
   }
 
@@ -117,8 +135,9 @@ class QualityValidator {
       sampleCount++;
     }
 
+    if (!sampleCount) return 0;
     const avgDeviation = noiseSum / sampleCount;
-    return Math.min(1, avgDeviation / 255); // 0-1 scale
+    return this.toScore(avgDeviation / 255); // 0-1 scale
   }
 
   /**
@@ -130,8 +149,8 @@ class QualityValidator {
    */
   estimateReadability(canvas, blurScore, noiseScore) {
     // Readability depends on multiple factors
-    const sharpness = 1 - Math.min(1, blurScore / 150); // More blur = less readable
-    const noiseFactor = 1 - Math.min(1, noiseScore * 0.5); // More noise = less readable
+    const sharpness = this.toScore(blurScore);
+    const noiseFactor = 1 - this.toScore(noiseScore * 0.5);
 
     // Check for reasonable brightness/contrast
     try {
@@ -152,6 +171,7 @@ class QualityValidator {
         sampleCount++;
       }
 
+      if (!sampleCount) return sharpness * noiseFactor;
       const avgBrightness = totalBrightness / sampleCount;
       const contrast = maxBrightness - minBrightness;
 
@@ -164,11 +184,16 @@ class QualityValidator {
 
       const contrastFactor = contrast >= this.config.quality.minContrast ? 1.0 : 0.7;
 
-      return (sharpness * 0.5 + noiseFactor * 0.25 + brightnessFactor * 0.15 + contrastFactor * 0.1) *
-        0.95; // Slightly reduced max to account for unknown factors
+      return this.toScore((sharpness * 0.5 + noiseFactor * 0.25 + brightnessFactor * 0.15 + contrastFactor * 0.1) *
+        0.95); // Slightly reduced max to account for unknown factors
     } catch (e) {
-      return sharpness * noiseFactor;
+      return this.toScore(sharpness * noiseFactor);
     }
+  }
+
+  /** Keep all externally displayed scores finite and inside the 0–1 range. */
+  toScore(value) {
+    return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
   }
 
   /**

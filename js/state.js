@@ -235,11 +235,12 @@ class QualityResult {
     readabilityScore = 0,
     reason = ""
   ) {
-    this.isAcceptable = isAcceptable;
-    this.blurScore = blurScore;
-    this.focusScore = focusScore;
-    this.noiseScore = noiseScore;
-    this.readabilityScore = readabilityScore;
+    const score = value => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+    this.blurScore = score(blurScore);
+    this.focusScore = score(focusScore);
+    this.noiseScore = score(noiseScore);
+    this.readabilityScore = score(readabilityScore);
+    this.isAcceptable = Boolean(isAcceptable) && this.focusScore >= 0.5 && this.readabilityScore > 0;
     this.reason = reason;
   }
 
