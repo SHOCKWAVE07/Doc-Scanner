@@ -18,6 +18,7 @@ class CropUIManager {
     this.draggedPointIndex = null;
     this.corners = [];
     this.onCropChange = null;
+    this.eventsAttached = false;
     this.minCropArea = 0.05; // Minimum 5% of canvas area
   }
 
@@ -90,6 +91,9 @@ class CropUIManager {
    * @private
    */
   attachEventListeners() {
+    if (this.eventsAttached) return;
+    this.eventsAttached = true;
+
     // Corner dragging
     this.cornerElements.forEach((el, index) => {
       if (el) {
@@ -118,7 +122,7 @@ class CropUIManager {
    * @private
    */
   onPointerDown(e, type, index) {
-    if (e.button !== 0) return; // Only left mouse button
+    if (e.pointerType === "mouse" && e.button !== 0) return;
 
     this.isDragging = true;
     this.draggedPointType = type;
@@ -128,8 +132,12 @@ class CropUIManager {
       y: e.clientY,
     };
 
-    // Show magnifier if we have one
-    if (this.magnifier && type === "corner") {
+    if (e.currentTarget?.setPointerCapture) {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+
+    // All eight handles need the same precision feedback.
+    if (this.magnifier) {
       this.showMagnifier(e.clientX, e.clientY, index);
     }
 
@@ -196,10 +204,11 @@ class CropUIManager {
    */
   moveCorner(index, delta) {
     const canvasRect = this.canvas.getBoundingClientRect();
-    const scaleFactor = this.canvas.width / canvasRect.width;
+    const scaleX = this.canvas.width / canvasRect.width;
+    const scaleY = this.canvas.height / canvasRect.height;
 
-    this.corners[index].x += delta.x * scaleFactor;
-    this.corners[index].y += delta.y * scaleFactor;
+    this.corners[index].x += delta.x * scaleX;
+    this.corners[index].y += delta.y * scaleY;
 
     // Clamp to canvas bounds
     this.corners[index].x = Math.max(0, Math.min(this.canvas.width, this.corners[index].x));
@@ -212,7 +221,8 @@ class CropUIManager {
    */
   moveMidpoint(index, delta) {
     const canvasRect = this.canvas.getBoundingClientRect();
-    const scaleFactor = this.canvas.width / canvasRect.width;
+    const scaleX = this.canvas.width / canvasRect.width;
+    const scaleY = this.canvas.height / canvasRect.height;
 
     // Map midpoint index to affected corners
     const adjacentCorners = [
@@ -226,20 +236,20 @@ class CropUIManager {
 
     if (index === 0) {
       // Top midpoint - move TL and TR Y
-      this.corners[c1].y += delta.y * scaleFactor;
-      this.corners[c2].y += delta.y * scaleFactor;
+      this.corners[c1].y += delta.y * scaleY;
+      this.corners[c2].y += delta.y * scaleY;
     } else if (index === 1) {
       // Right midpoint - move TR and BR X
-      this.corners[c1].x += delta.x * scaleFactor;
-      this.corners[c2].x += delta.x * scaleFactor;
+      this.corners[c1].x += delta.x * scaleX;
+      this.corners[c2].x += delta.x * scaleX;
     } else if (index === 2) {
       // Bottom midpoint - move BR and BL Y
-      this.corners[c1].y += delta.y * scaleFactor;
-      this.corners[c2].y += delta.y * scaleFactor;
+      this.corners[c1].y += delta.y * scaleY;
+      this.corners[c2].y += delta.y * scaleY;
     } else if (index === 3) {
       // Left midpoint - move BL and TL X
-      this.corners[c1].x += delta.x * scaleFactor;
-      this.corners[c2].x += delta.x * scaleFactor;
+      this.corners[c1].x += delta.x * scaleX;
+      this.corners[c2].x += delta.x * scaleX;
     }
 
     // Clamp to bounds
@@ -316,11 +326,12 @@ class CropUIManager {
     this.cornerElements.forEach((el, i) => {
       if (el) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = (this.corners[i].x / this.canvas.width) * rect.width + rect.left;
-        const y = (this.corners[i].y / this.canvas.height) * rect.height + rect.top;
+        if (!rect.width || !rect.height) return;
+        const x = (this.corners[i].x / this.canvas.width) * rect.width;
+        const y = (this.corners[i].y / this.canvas.height) * rect.height;
 
-        el.style.left = x - el.offsetWidth / 2 + "px";
-        el.style.top = y - el.offsetHeight / 2 + "px";
+        el.style.left = x + "px";
+        el.style.top = y + "px";
       }
     });
 
@@ -340,12 +351,13 @@ class CropUIManager {
         };
 
         const rect = this.canvas.getBoundingClientRect();
-        const x = (mid.x / this.canvas.width) * rect.width + rect.left;
-        const y = (mid.y / this.canvas.height) * rect.height + rect.top;
+        if (!rect.width || !rect.height) return;
+        const x = (mid.x / this.canvas.width) * rect.width;
+        const y = (mid.y / this.canvas.height) * rect.height;
 
         const el = this.midpointElements[idx];
-        el.style.left = x - el.offsetWidth / 2 + "px";
-        el.style.top = y - el.offsetHeight / 2 + "px";
+        el.style.left = x + "px";
+        el.style.top = y + "px";
       }
     });
   }
@@ -376,8 +388,9 @@ class CropUIManager {
     const magnifierSize = 150; // pixels
 
     // Position magnifier
-    this.magnifier.style.left = clientX - magnifierSize / 2 + "px";
-    this.magnifier.style.top = clientY - magnifierSize / 2 + "px";
+    const editorRect = this.editorRect || this.canvas.getBoundingClientRect();
+    this.magnifier.style.left = clientX - editorRect.left - magnifierSize / 2 + "px";
+    this.magnifier.style.top = clientY - editorRect.top - magnifierSize / 2 + "px";
 
     // Calculate source region
     const canvasX = ((clientX - rect.left) / rect.width) * this.canvas.width;

@@ -1,15 +1,15 @@
 "use strict";
 
 const $ = id => document.getElementById(id);
-const cameraInput=$("cameraInput"), galleryInput=$("galleryInput");
-const cameraBtn=$("cameraBtn"), galleryBtn=$("galleryBtn");
+const cameraInput=$("cameraInput"), galleryInput=$("galleryInput"), pdfInput=$("pdfInput");
+const cameraBtn=$("cameraBtn"), galleryBtn=$("galleryBtn"), importPdfBtn=$("importPdfBtn");
 const selectionCard=$("selectionCard"), editor=$("editor"), sourceCanvas=$("sourceCanvas");
 const svg=$("selectionSvg"), quadEl=$("quad"), statusEl=$("status"), progressEl=$("progress");
 const pagesEl=$("pages"), emptyEl=$("empty"), pageCountEl=$("pageCount");
 const pdfBtn=$("pdfBtn"), clearAllBtn=$("clearAll"), toastEl=$("toast");
 const previewModal=$("previewModal"), previewImage=$("previewImage"), previewTitle=$("previewTitle");
 const optimizeBtn=$("optimizeBtn"), sizeInfo=$("sizeInfo"), beforeSizeEl=$("beforeSize"), afterSizeEl=$("afterSize"), sizeSavingEl=$("sizeSaving");
-const exportModal=$("exportModal"), exportNameEl=$("exportName"), exportPdfEl=$("exportPdf"), exportImagesEl=$("exportImages"), exportImagesOption=$("exportImagesOption");
+const exportModal=$("exportModal"), exportNameEl=$("exportName"), exportPdfEl=$("exportPdf"), exportImagesEl=$("exportImages"), exportImagesOption=$("exportImagesOption"), exportZipOption=$("exportZipOption"), exportZipEl=$("exportZip");
 const ocrModal=$("ocrModal"), ocrTitle=$("ocrTitle"), ocrStatus=$("ocrStatus"), ocrText=$("ocrText");
 // New UI elements
 const qualityFeedback=$("qualityFeedback"), qualityBadge=$("qualityBadge"), qualityBlur=$("qualityBlur"), qualityBlurPct=$("qualityBlurPct");
@@ -79,12 +79,12 @@ waitForCV().then(()=>{
   appState = new ApplicationState();
   
   // Setup UI
+  scanner=new jscanify();
   setupProfileSelector();
   setupAdjustmentSliders();
   setupAutoCapture();
   
   cvReady=true; 
-  scanner=new jscanify();
   setStatus("Ready. Take a photo or add multiple photos.",0);
 }).catch(e=>setStatus(e.message,0));
 
@@ -350,6 +350,7 @@ function setupAutoCapture() {
   const statusText = $("statusText");
   const cameraStream = $("cameraStream");
   const previewCanvas = $("previewCanvas");
+  let latestCameraFrame = null;
 
   // Initialize magnifier UI
   if (magnifier) {
@@ -373,14 +374,32 @@ function setupAutoCapture() {
 
   // Auto capture toggle handler
   if (autoCaptureToggle) {
-    autoCaptureToggle.addEventListener("change", (e) => {
+    autoCaptureToggle.addEventListener("change", async (e) => {
       if (e.target.checked) {
-        autoCaptureManager.enable();
-        autoCaptureStatus.style.display = "flex";
-        toast("Auto Capture enabled");
-        logger.info("Auto Capture enabled");
+        try {
+          await setupCameraPreview(cameraStream, previewCanvas);
+          cameraStreamManager.start(async (frame) => {
+            latestCameraFrame = frame.canvas;
+            const result = await autoCaptureManager.processFrame(
+              frame.canvas,
+              frame.detectedCorners,
+              frame.confidence
+            );
+            if (result.shouldCapture) await autoCaptureManager.capture();
+          });
+          autoCaptureManager.enable();
+          autoCaptureStatus.style.display = "flex";
+          toast("Auto Capture enabled");
+          logger.info("Auto Capture enabled");
+        } catch (error) {
+          e.target.checked = false;
+          autoCaptureStatus.style.display = "none";
+          toast(error.message || "Camera could not be started");
+          logger.warn("Auto Capture camera start failed", { error: error.message });
+        }
       } else {
         autoCaptureManager.disable();
+        cameraStreamManager.stop();
         autoCaptureStatus.style.display = "none";
         toast("Auto Capture disabled");
         logger.info("Auto Capture disabled");
@@ -398,6 +417,13 @@ function setupAutoCapture() {
       if (next) {
         await openForSelection(next);
       }
+    } else if (!currentImage && latestCameraFrame) {
+      const blob = await new Promise((resolve) => {
+        latestCameraFrame.toBlob(resolve, "image/jpeg", 0.95);
+      });
+      if (!blob) throw new Error("Could not capture a camera frame");
+      await openForSelection(new File([blob], `Camera-${Date.now()}.jpg`, { type: "image/jpeg" }));
+      await addCurrentPage();
     } else if (currentImage && corners.length === 4) {
       // Auto-crop and add to pages
       await addCurrentPage();
@@ -408,10 +434,7 @@ function setupAutoCapture() {
     updateAutoCaptureStatus(status, statusIndicator, statusText, statusEl);
   });
 
-  // Initialize camera stream manager for future use (Phase 2 preview)
-  if (cameraStream && previewCanvas) {
-    setupCameraPreview(cameraStream, previewCanvas);
-  }
+  // Camera permission and frame processing start when Auto Capture is enabled.
 }
 
 // Update UI based on auto capture status
@@ -502,25 +525,57 @@ async function addCurrentPage() {
     // Compress image
     const compressed = await compressImage(enhanced.canvas, profile.jpegQuality);
 
-    // Create page object
-    const pageId = Date.now() + Math.random().toString(36).slice(2, 9);
-    const page = {
-      id: pageId,
-      blob: compressed.blob,
-      url: URL.createObjectURL(compressed.blob),
-      w: enhanced.canvas.width,
-      h: enhanced.canvas.height,
-      rotation: 0,
-      name: `Page ${pages.length + 1}`,
-      quality: quality,
-    };
+    // Check if we're editing an existing page (Phase 6)
+    const editingPageId = pdfPageManager.getEditingPage();
+    
+    if (editingPageId) {
+      // Update existing page
+      const pageIndex = pages.findIndex(p => p.id === editingPageId);
+      if (pageIndex >= 0) {
+        const oldPage = pages[pageIndex];
+        URL.revokeObjectURL(oldPage.url);
+        
+        const updatedPage = {
+          ...oldPage,
+          blob: compressed.blob,
+          url: URL.createObjectURL(compressed.blob),
+          w: enhanced.canvas.width,
+          h: enhanced.canvas.height,
+          quality: quality,
+          edited: true
+        };
+        
+        pages[pageIndex] = updatedPage;
+        renderPages();
+        setStatus(`Page ${pageIndex + 1} updated`, 100);
+        toast(`Page ${pageIndex + 1} updated (${(compressed.blob.size / 1024).toFixed(0)} KB)`);
+        
+        logger.info("Page edited", { pageId: editingPageId, size: compressed.blob.size, quality });
+        
+        pdfPageManager.clearEditingPage();
+      }
+    } else {
+      // Create new page
+      const pageId = Date.now() + Math.random().toString(36).slice(2, 9);
+      const page = {
+        id: pageId,
+        type: 'scanned',
+        blob: compressed.blob,
+        url: URL.createObjectURL(compressed.blob),
+        w: enhanced.canvas.width,
+        h: enhanced.canvas.height,
+        rotation: 0,
+        name: `Page ${pages.length + 1}`,
+        quality: quality,
+      };
 
-    pages.push(page);
-    renderPages();
-    setStatus(`Added: ${page.name}`, 100);
-    toast(`${page.name} added (${(page.blob.size / 1024).toFixed(0)} KB)`);
+      pages.push(page);
+      renderPages();
+      setStatus(`Added: ${page.name}`, 100);
+      toast(`${page.name} added (${(page.blob.size / 1024).toFixed(0)} KB)`);
 
-    logger.info("Page added", { pageId, size: page.blob.size, quality });
+      logger.info("Page added", { pageId, size: page.blob.size, quality });
+    }
 
     // Clear for next image if in queue
     if (fileQueue.length > 0) {
@@ -604,9 +659,57 @@ async function compressImage(canvas, quality = 0.78) {
 
 cameraBtn.onclick=()=>cameraInput.click();
 galleryBtn.onclick=()=>galleryInput.click();
+importPdfBtn.onclick=()=>pdfInput.click();
 
 cameraInput.onchange=e=>handleFiles([...e.target.files]);
 galleryInput.onchange=e=>handleFiles([...e.target.files]);
+pdfInput.onchange=e=>handlePdfImport([...e.target.files]);
+
+async function handlePdfImport(files) {
+  if (!files.length) return;
+
+  const pdfFile = files[0];
+  if (!pdfFile.type.includes('pdf')) {
+    toast("Please select a PDF file");
+    pdfInput.value = "";
+    return;
+  }
+
+  try {
+    setStatus("Importing PDF…", 10);
+    importPdfBtn.disabled = true;
+
+    const importedPages = await pdfImportHandler.importPDF(pdfFile, (current, total) => {
+      const progress = 10 + (current / total) * 80;
+      setStatus(`Importing PDF: ${current}/${total}…`, progress);
+    });
+
+    if (importedPages.length === 0) {
+      toast("PDF has no pages");
+      setStatus("Import failed", 0);
+      return;
+    }
+
+    // Add imported pages to pages array
+    importedPages.forEach(pageData => {
+      pageData.type = 'pdf-imported';
+      pages.push(pageData);
+    });
+
+    renderPages();
+    setStatus(`Imported ${importedPages.length} page${importedPages.length > 1 ? "s" : ""} from PDF`, 100);
+    toast(`PDF imported: ${importedPages.length} page${importedPages.length > 1 ? "s" : ""}`);
+
+    logger.info("PDF imported", { fileName: pdfFile.name, pageCount: importedPages.length });
+  } catch (e) {
+    console.error("PDF import error:", e);
+    toast("Failed to import PDF: " + e.message);
+    setStatus("PDF import failed", 0);
+  } finally {
+    importPdfBtn.disabled = false;
+    pdfInput.value = "";
+  }
+}
 
 async function handleFiles(files){
   if(!files.length) return;
@@ -651,8 +754,8 @@ async function openForSelection(file){
   afterSizeEl.textContent="—";
   sizeSavingEl.textContent="—";
 
-  drawSource();
   selectionCard.style.display="block";
+  drawSource();
   await autoDetect();
   selectionCard.scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -1025,199 +1128,6 @@ function calculateMidpoints(corners){
   return mids;
 }
 
-// Update magnifier to show zoomed view at cursor position
-function updateMagnifier(cursorPos){
-  if(!magnifier || !magnifierCanvas || !sourceCanvas) return;
-  
-  const zoomLevel = 3;
-  const magnifierSize = 130;
-  const sourceCtx = sourceCanvas.getContext("2d");
-  
-  magnifierCanvas.width = magnifierSize;
-  magnifierCanvas.height = magnifierSize;
-  const magCtx = magnifierCanvas.getContext("2d");
-  
-  // Calculate source region (what to zoom into)
-  const srcWidth = sourceCanvas.width / zoomLevel;
-  const srcHeight = sourceCanvas.height / zoomLevel;
-  const srcX = Math.max(0, Math.min(sourceCanvas.width - srcWidth, cursorPos.x - srcWidth / 2));
-  const srcY = Math.max(0, Math.min(sourceCanvas.height - srcHeight, cursorPos.y - srcHeight / 2));
-  
-  // Draw zoomed region
-  magCtx.drawImage(
-    sourceCanvas,
-    srcX, srcY, srcWidth, srcHeight,
-    0, 0, magnifierSize, magnifierSize
-  );
-}
-
-function pointerPos(ev){
-  // Use the editor rectangle. The editor and canvas have exactly the
-  // same displayed dimensions.
-  const r=editor.getBoundingClientRect();
-
-  const x=(ev.clientX-r.left)*(sourceCanvas.width/r.width);
-  const y=(ev.clientY-r.top)*(sourceCanvas.height/r.height);
-
-  return {
-    x:Math.max(0,Math.min(sourceCanvas.width,x)),
-    y:Math.max(0,Math.min(sourceCanvas.height,y))
-  };
-}
-
-function startDrag(i,e){
-  pendingOptimized=null;
-  sizeInfo.classList.remove("show");
-  e.preventDefault();
-  e.stopPropagation();
-
-  dragIndex=i;
-
-  const el=$("c"+i);
-  el.setPointerCapture?.(e.pointerId);
-}
-
-for(let i=0;i<4;i++){
-  const el=$("c"+i);
-
-  el.addEventListener("pointerdown",e=>startDrag(i,e));
-
-  el.addEventListener("pointermove",e=>{
-    if(dragIndex!==i) return;
-
-    corners[i]=pointerPos(e);
-    renderCorners();
-  });
-
-  el.addEventListener("pointerup",e=>{
-    el.releasePointerCapture?.(e.pointerId);
-    dragIndex=-1;
-  });
-
-  el.addEventListener("pointercancel",()=>{
-    dragIndex=-1;
-  });
-}
-
-// Setup midpoint event listeners for 8-point crop refinement
-for(let i=0;i<4;i++){
-  const el=$("m"+i);
-  if(!el) continue;
-  
-  el.addEventListener("pointerdown",e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    draggedMidpointIndex=i;
-    magnifier?.classList.add("active");
-    el.setPointerCapture?.(e.pointerId);
-  });
-
-  el.addEventListener("pointermove",e=>{
-    if(draggedMidpointIndex!==i) return;
-    
-    const pos=pointerPos(e);
-    updateMagnifier(pos);
-    adjustCornersFromMidpoint(i, pos);
-    renderCorners();
-  });
-
-  el.addEventListener("pointerup",e=>{
-    el.releasePointerCapture?.(e.pointerId);
-    draggedMidpointIndex=-1;
-    magnifier?.classList.remove("active");
-  });
-
-  el.addEventListener("pointercancel",()=>{
-    draggedMidpointIndex=-1;
-    magnifier?.classList.remove("active");
-  });
-}
-
-// Adjust corner positions based on midpoint movement
-function adjustCornersFromMidpoint(midpointIndex, newPos){
-  if(corners.length < 4) return;
-  
-  // Map midpoint to adjacent corners
-  const cornerPairs = [
-    [0, 1], // top midpoint affects corners 0 and 1
-    [1, 2], // right midpoint affects corners 1 and 2
-    [2, 3], // bottom midpoint affects corners 2 and 3
-    [3, 0]  // left midpoint affects corners 3 and 0
-  ];
-  
-  const [c1, c2] = cornerPairs[midpointIndex];
-  
-  // Calculate offset from current midpoint to new position
-  const currentMid = {
-    x: (corners[c1].x + corners[c2].x) / 2,
-    y: (corners[c1].y + corners[c2].y) / 2
-  };
-  
-  const offset = {
-    x: newPos.x - currentMid.x,
-    y: newPos.y - currentMid.y
-  };
-  
-  // Move both corners by the offset
-  corners[c1].x += offset.x;
-  corners[c1].y += offset.y;
-  corners[c2].x += offset.x;
-  corners[c2].y += offset.y;
-  
-  // Validate the new configuration
-  if(!isValidQuadrilateral(corners)){
-    // Undo the movement if it creates an invalid geometry
-    corners[c1].x -= offset.x;
-    corners[c1].y -= offset.y;
-    corners[c2].x -= offset.x;
-    corners[c2].y -= offset.y;
-  }
-}
-
-// Validate that the quadrilateral hasn't crossed itself
-function isValidQuadrilateral(pts){
-  if(pts.length !== 4) return false;
-  
-  // Check minimum area (must be at least 10000 pixels)
-  const area = Math.abs(
-    (pts[1].x - pts[0].x) * (pts[2].y - pts[0].y) -
-    (pts[2].x - pts[0].x) * (pts[1].y - pts[0].y)
-  );
-  
-  if(area < 10000) return false;
-  
-  // Check that all points are within canvas bounds
-  for(let p of pts){
-    if(p.x < 0 || p.x > sourceCanvas.width || 
-       p.y < 0 || p.y > sourceCanvas.height){
-      return false;
-    }
-  }
-  
-  return true;
-}
-
-editor.addEventListener("pointermove",e=>{
-  if(dragIndex<0 && draggedMidpointIndex<0) return;
-  
-  const pos = pointerPos(e);
-  
-  if(dragIndex >= 0){
-    corners[dragIndex]=pos;
-    renderCorners();
-  }
-  
-  if(draggedMidpointIndex >= 0){
-    updateMagnifier(pos);
-  }
-});
-
-window.addEventListener("pointerup",()=>{
-  dragIndex=-1;
-  draggedMidpointIndex=-1;
-  magnifier?.classList.remove("active");
-});
-
 window.addEventListener("resize",()=>{
   requestAnimationFrame(renderCorners);
 });
@@ -1484,7 +1394,25 @@ $("saveSelection").onclick=async()=>{
       }
     };
 
-    pages.push(page);
+    const editingPageId = pdfPageManager.getEditingPage();
+    const editingPageIndex = editingPageId
+      ? pages.findIndex(existingPage => existingPage.id === editingPageId)
+      : -1;
+
+    if (editingPageIndex >= 0) {
+      const oldPage = pages[editingPageIndex];
+      if (oldPage.url !== currentImageURL) URL.revokeObjectURL(oldPage.url);
+      pages[editingPageIndex] = {
+        ...oldPage,
+        ...page,
+        id: oldPage.id,
+        name: oldPage.name,
+        edited: true
+      };
+      pdfPageManager.clearEditingPage();
+    } else {
+      pages.push(page);
+    }
     renderPages();
 
     // Reset optimization UI state for the saved page.
@@ -1520,22 +1448,28 @@ function renderPages(){
   pages.forEach((p,i)=>{
     const card=document.createElement("div"); card.className="page";
     card.dataset.index=i;
-    const img=document.createElement("img"); img.src=p.url; img.alt="Page "+(i+1); img.title="Click to recognize text";
-    img.onclick=()=>runOcr(i);
+    card.dataset.id=p.id;
+    
+    // Add source badge (Phase 6)
+    const badge=document.createElement("div"); badge.className="page-badge"; badge.textContent=pdfPageManager.getSourceBadge(p.type);
+    badge.title=pdfPageManager.getSourceLabel(p.type);
+    
+    const img=document.createElement("img"); img.src=p.url; img.alt="Page "+(i+1); img.title="Open preview";
+    img.onclick=()=>openPreview(i);
     const meta=document.createElement("div"); meta.className="page-meta";
     meta.textContent=`${i+1}. ${p.name}`;
     const actions=document.createElement("div"); actions.className="page-actions";
     const prev=makeBtn("👁","Preview","iconbtn");
+    const edit=makeBtn("✎","Edit & Crop","iconbtn");
     const rot=makeBtn("↻","Rotate","iconbtn");
-    const ocr=makeBtn("Aa","Recognize text","iconbtn");
     const del=makeBtn("🗑","Delete","iconbtn delete");
     prev.onclick=()=>openPreview(i);
+    edit.onclick=()=>editPage(i);
     rot.onclick=()=>rotatePage(i);
-    ocr.onclick=()=>runOcr(i);
     del.onclick=()=>deletePage(i);
-    actions.append(prev,rot,ocr,del);
+    actions.append(prev,edit,rot,del);
     card.addEventListener("pointerdown",e=>startPagePointerDrag(i,e));
-    card.append(img,meta,actions); pagesEl.appendChild(card);
+    card.append(badge,img,meta,actions); pagesEl.appendChild(card);
   });
   pageCountEl.textContent=pages.length+" "+(pages.length===1?"page":"pages");
   pdfBtn.disabled=pages.length===0; clearAllBtn.disabled=pages.length===0;
@@ -1543,6 +1477,7 @@ function renderPages(){
   exportImagesOption.title=pages.length===1
     ? "Download the single scanned page as a JPEG"
     : "Image download is available only for one scanned page";
+  exportZipOption.style.display=pages.length>1 ? "block" : "none";
   if(pages.length!==1) exportPdfEl.checked=true;
 }
 
@@ -1718,6 +1653,64 @@ function deletePage(i){
   if(previewIndex===i) closePreview();
   renderPages(); toast("Page deleted");
 }
+
+// Edit page (crop/enhance) - Phase 6
+async function editPage(i){
+  if(i<0 || i>=pages.length) return;
+  
+  const page=pages[i];
+  
+  // Mark this page as being edited
+  pdfPageManager.setEditingPage(page.id);
+  
+  // Load the page image
+  setStatus("Loading page for editing…",10);
+  
+  try{
+    // Create image from page blob
+    const img=new Image();
+    img.src=page.url;
+    
+    await new Promise((resolve,reject)=>{
+      img.onload=resolve;
+      img.onerror=reject;
+    });
+    
+    // Set as current image for editing
+    currentImage=img;
+    currentImageURL=page.url;
+    selectionCard.style.display="block";
+    
+    // Draw to canvas
+    drawSource();
+    
+    // Set default corners based on page dimensions
+    corners=[
+      {x:0, y:0},
+      {x:sourceCanvas.width, y:0},
+      {x:sourceCanvas.width, y:sourceCanvas.height},
+      {x:0, y:sourceCanvas.height}
+    ];
+    
+    // Initialize crop UI if not already done
+    if(cropUIManager && sourceCanvas){
+      cropUIManager.setCorners(corners);
+      cropUIManager.render();
+    }
+    
+    renderCorners();
+    setStatus(`Editing Page ${i+1} - Adjust corners and click "Save Page" to save`,50);
+    
+    // Close any open modals
+    closePreview();
+    
+  }catch(e){
+    console.error("Edit page error:",e);
+    toast("Could not load page for editing");
+    setStatus("Edit failed",0);
+  }
+}
+
 function openPreview(i){
   previewIndex=i; updatePreview(); previewModal.classList.add("open");
 }
@@ -1951,12 +1944,68 @@ async function confirmExport(){
   closeExport();
   confirmExportButton.disabled=true;
   try{
-    if(exportImagesEl.checked) await saveImages(fileName);
-    else await savePDF(fileName);
+    if(exportImagesEl.checked) {
+      await saveImages(fileName);
+    } else if(exportZipEl.checked) {
+      await saveImagesZip(fileName);
+    } else {
+      await savePDF(fileName);
+    }
     setStatus("Downloads ready.",100);
     toast("Download complete");
   }finally{
     confirmExportButton.disabled=false;
+  }
+}
+
+// Save multiple images as ZIP (Phase 6)
+async function saveImagesZip(fileName){
+  if(pages.length<2){
+    toast("ZIP export requires at least 2 pages");
+    return;
+  }
+
+  // Check if JSZip is available, otherwise load it
+  if(!window.JSZip){
+    try{
+      setStatus("Loading compression library…",10);
+      await new Promise((resolve,reject)=>{
+        const script=document.createElement("script");
+        script.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+        script.onload=resolve;
+        script.onerror=reject;
+        document.head.appendChild(script);
+      });
+    }catch(e){
+      toast("Could not load ZIP library. Try PDF export instead.");
+      setStatus("ZIP library load failed",0);
+      return;
+    }
+  }
+
+  try{
+    const zip=new window.JSZip();
+    const folder=zip.folder("pages");
+
+    for(let i=0;i<pages.length;i++){
+      const p=pages[i];
+      setStatus(`Adding page ${i+1} to ZIP…`,Math.round((i/pages.length)*90));
+      
+      const pageNum=String(i+1).padStart(3,"0");
+      const name=`${pageNum}-${p.name.replace(/[\\/:*?"<>|]+/g,"-")}.jpg`;
+      
+      folder.file(name,p.blob);
+    }
+
+    setStatus("Creating ZIP…",95);
+    const blob=await folder.generateAsync({type:"blob",compression:"DEFLATE"});
+    downloadBlob(blob,fileName+".zip");
+    
+    setStatus("ZIP created successfully",100);
+  }catch(e){
+    console.error("ZIP creation error:",e);
+    toast("ZIP creation failed: "+e.message);
+    setStatus("ZIP creation failed",0);
   }
 }
 

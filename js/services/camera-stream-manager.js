@@ -45,7 +45,11 @@ class CameraStreamManager {
       // Wait for video to be ready
       await new Promise((resolve) => {
         this.videoElement.onloadedmetadata = () => {
-          this.videoElement.play();
+          const maxWidth = this.config.imageProcessing.maxPreviewResolution || 1024;
+          const scale = Math.min(1, maxWidth / this.videoElement.videoWidth);
+          this.previewCanvas.width = Math.max(1, Math.round(this.videoElement.videoWidth * scale));
+          this.previewCanvas.height = Math.max(1, Math.round(this.videoElement.videoHeight * scale));
+          this.videoElement.play().catch(() => {});
           resolve();
         };
       });

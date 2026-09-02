@@ -29,6 +29,8 @@
 <script src="js/services/stability-detector.js"></script>
 <script src="js/services/auto-capture-manager.js"></script>
 <script src="js/services/camera-stream-manager.js"></script>
+<script src="js/services/pdf-import-handler.js"></script>
+<script src="js/services/pdf-page-manager.js"></script>
 <script src="js/ui/crop-ui-manager.js"></script>
 <script src="js/ui/magnifier-ui.js"></script>
 </head>
@@ -50,9 +52,11 @@
     <div class="toolbar">
       <button class="btn primary" id="cameraBtn">📷 Take Photo</button>
       <button class="btn secondary" id="galleryBtn">🖼️ Add Photos</button>
+      <button class="btn secondary" id="importPdfBtn">📄 Import PDF</button>
     </div>
     <input id="cameraInput" type="file" accept="image/*" capture="environment">
     <input id="galleryInput" type="file" accept="image/*" multiple>
+    <input id="pdfInput" type="file" accept=".pdf" style="display:none;">
     <div class="drop" id="dropZone">Tap <strong>Add Photos</strong> to select multiple images, or use <strong>Take Photo</strong> on mobile.</div>
     <div class="status" id="status">Loading scanner…</div>
     <div class="progress"><i id="progress"></i></div>
@@ -241,9 +245,10 @@
     </div>
     <label class="field-label" for="exportName">File name</label>
     <input class="text-input" id="exportName" type="text" value="Document" maxlength="80" autocomplete="off">
-    <div class="export-options">
-      <label class="check-option"><input id="exportPdf" name="exportFormat" type="radio" checked> <span>PDF document</span></label>
-      <label class="check-option" id="exportImagesOption"><input id="exportImages" name="exportFormat" type="radio"> <span>Single image (JPEG)</span></label>
+    <div class="export-options" id="exportOptions">
+      <label class="check-option"><input id="exportPdf" name="exportFormat" type="radio" checked> <span id="exportPdfLabel">PDF document</span></label>
+      <label class="check-option" id="exportImagesOption"><input id="exportImages" name="exportFormat" type="radio"> <span id="exportImagesLabel">Single image (JPEG)</span></label>
+      <label class="check-option" id="exportZipOption" style="display:none;"><input id="exportZip" name="exportFormat" type="radio"> <span>ZIP of all images</span></label>
     </div>
     <div class="modal-actions">
       <button class="btn secondary" id="cancelExport">Cancel</button>
