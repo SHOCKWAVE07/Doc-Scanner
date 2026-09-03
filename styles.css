@@ -105,8 +105,8 @@ input[type=file]{display:none}
 .size-save{margin-top:4px;color:#0b63f6;font-weight:800}
 .small-note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:9px;text-align:center}
 
-.pages{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.page{position:relative;background:#fff;border:1px solid var(--line);border-radius:15px;padding:7px;overflow:hidden;cursor:grab;touch-action:none;transition:opacity .15s,border-color .15s,transform .15s}
+.pages{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:2px 2px 10px;scroll-snap-type:x proximity;scrollbar-width:thin;-webkit-overflow-scrolling:touch;touch-action:pan-x}
+.page{position:relative;flex:0 0 clamp(190px,30vw,260px);width:clamp(190px,30vw,260px);background:#fff;border:1px solid var(--line);border-radius:15px;padding:7px;overflow:hidden;cursor:grab;touch-action:pan-x;scroll-snap-align:start;transition:opacity .15s,border-color .15s,transform .15s}
 .page:active{cursor:grabbing}
 .page.dragging{opacity:.45}
 .page.drag-over{border-color:var(--blue);transform:translateY(-3px)}
@@ -129,8 +129,8 @@ input[type=file]{display:none}
 .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .modal-head strong{font-size:15px}
 .close{width:40px;height:40px;border-radius:12px;background:#eef3fa}
-.preview-image-frame{width:100%;height:min(70vh,520px);min-height:240px;display:grid;place-items:center;background:#111;border-radius:13px;overflow:hidden;flex:1;min-height:0}
-#previewImage{display:block;width:100%;height:100%;object-fit:contain;background:#111;border-radius:13px;transform-origin:center center}
+.preview-image-frame{width:100%;height:min(70vh,520px);min-height:240px;display:flex;align-items:center;justify-content:flex-start;background:#111;border-radius:13px;overflow-x:auto;overflow-y:hidden;flex:1;min-height:0}
+#previewImage{display:block;width:auto;min-width:100%;height:100%;object-fit:contain;background:#111;border-radius:13px;transform-origin:center center;flex:0 0 auto}
 .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
 .preview-actions{grid-template-columns:repeat(4,minmax(0,1fr))}
 .preview-actions{flex-shrink:0}
@@ -197,11 +197,7 @@ input[type=file]{display:none}
   .toolbar{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .toolbar .btn{min-width:0;padding:9px 4px;gap:4px;font-size:11px;white-space:nowrap}
   .toolbar #importPdfBtn{grid-column:1 / -1;width:calc((100% - 8px) / 2);justify-self:center}
-  .pages{grid-template-columns:repeat(2,1fr)}
   .page img{height:145px}
   .compression-selector{grid-template-columns:1fr}
   .profile-hint{grid-column:1;margin-top:0;margin-bottom:-8px;order:3}
-}
-@media(min-width:800px){
-  .pages{grid-template-columns:repeat(4,1fr)}
 }

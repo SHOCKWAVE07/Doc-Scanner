@@ -1632,6 +1632,8 @@ function renderPages(){
 
 function startPagePointerDrag(index,e){
   if(e.button!==undefined && e.button!==0) return;
+  // Keep touch/pointer gestures available for the gallery's native horizontal scroll.
+  if(e.pointerType === "touch") return;
   if(e.target.closest("button")) return;
 
   pagePointerDrag={index,pointerId:e.pointerId,moved:false,targetIndex:index};
