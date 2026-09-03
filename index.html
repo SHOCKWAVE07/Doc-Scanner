@@ -86,7 +86,7 @@
     <canvas id="previewCanvas" style="display:none;"></canvas>
     
     <!-- Scan Mode Selector -->
-    <div class="scan-mode-selector" id="scanModeSelector">
+    <!-- <div class="scan-mode-selector" id="scanModeSelector">
       <label for="scanModeSelect">Scanning mode:</label>
       <select id="scanModeSelect" class="scan-mode-select">
         <option value="document" selected>📄 Document (Default)</option>
@@ -98,7 +98,7 @@
       </select>
       <span class="mode-hint" id="modeHint">Optimized for regular documents</span>
     </div>
-  </section>
+  </section> -->
 
   <section class="card" id="selectionCard">
     <div class="section-title">
@@ -125,31 +125,6 @@
         <canvas id="magnifierCanvas"></canvas>
         <div class="magnifier-crosshair"></div>
       </div>
-    </div>
-
-    <!-- Quality Feedback Display -->
-    <div class="quality-feedback" id="qualityFeedback" style="display:none;">
-      <div class="quality-header">
-        <span class="quality-title">Image Quality</span>
-        <span class="quality-badge" id="qualityBadge">Good</span>
-      </div>
-      <div class="quality-scores">
-        <div class="quality-item">
-          <label>Sharpness</label>
-          <div class="quality-bar">
-            <div class="quality-fill" id="qualityBlur" style="width:0%"></div>
-          </div>
-          <span class="quality-percent" id="qualityBlurPct">0%</span>
-        </div>
-        <div class="quality-item">
-          <label>Readability</label>
-          <div class="quality-bar">
-            <div class="quality-fill" id="qualityReadability" style="width:0%"></div>
-          </div>
-          <span class="quality-percent" id="qualityReadabilityPct">0%</span>
-        </div>
-      </div>
-      <div class="quality-message" id="qualityMessage">Image quality is acceptable</div>
     </div>
 
     <!-- Compression Profile Selector -->
@@ -198,10 +173,36 @@
     </div>
 
     <div class="editor-actions">
-      <button class="btn secondary" id="resetCorners">↺ Reset</button>
-      <button class="btn secondary" id="optimizeBtn">✨ Enhance & Compress</button>
+      <button class="btn secondary" id="resetCorners">↺ Reset </button>
+      <button class="btn secondary" id="rotateSelection">↻ Rotate</button>
       <button class="btn primary" id="saveSelection" style="grid-column:1 / -1">✓ Save Page</button>
     </div>
+
+    <!-- Quality Feedback Display -->
+    <div class="quality-feedback" id="qualityFeedback" style="display:none;">
+      <div class="quality-header">
+        <span class="quality-title">Image Quality</span>
+        <span class="quality-badge" id="qualityBadge">Good</span>
+      </div>
+      <div class="quality-scores">
+        <div class="quality-item">
+          <label>Sharpness</label>
+          <div class="quality-bar">
+            <div class="quality-fill" id="qualityBlur" style="width:0%"></div>
+          </div>
+          <span class="quality-percent" id="qualityBlurPct">0%</span>
+        </div>
+        <div class="quality-item">
+          <label>Readability</label>
+          <div class="quality-bar">
+            <div class="quality-fill" id="qualityReadability" style="width:0%"></div>
+          </div>
+          <span class="quality-percent" id="qualityReadabilityPct">0%</span>
+        </div>
+      </div>
+      <div class="quality-message" id="qualityMessage">Image quality is acceptable</div>
+    </div>
+    
     <div class="size-info" id="sizeInfo">
       <div class="size-row"><span class="size-label">Before optimization</span><span class="size-value" id="beforeSize">—</span></div>
       <div class="size-row"><span class="size-label">After optimization</span><span class="size-value" id="afterSize">—</span></div>

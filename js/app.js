@@ -8,7 +8,9 @@ const svg=$("selectionSvg"), quadEl=$("quad"), statusEl=$("status"), progressEl=
 const pagesEl=$("pages"), emptyEl=$("empty"), pageCountEl=$("pageCount");
 const pdfBtn=$("pdfBtn"), clearAllBtn=$("clearAll"), toastEl=$("toast");
 const previewModal=$("previewModal"), previewImage=$("previewImage"), previewTitle=$("previewTitle");
-const optimizeBtn=$("optimizeBtn"), sizeInfo=$("sizeInfo"), beforeSizeEl=$("beforeSize"), afterSizeEl=$("afterSize"), sizeSavingEl=$("sizeSaving");
+const optimizeBtn={disabled:false}; // Enhancement is performed as part of Save Page.
+const sizeInfo=$("sizeInfo"), beforeSizeEl=$("beforeSize"), afterSizeEl=$("afterSize"), sizeSavingEl=$("sizeSaving");
+const rotateSelectionBtn=$("rotateSelection");
 const exportModal=$("exportModal"), exportNameEl=$("exportName"), exportPdfEl=$("exportPdf"), exportImagesEl=$("exportImages"), exportImagesOption=$("exportImagesOption"), exportZipOption=$("exportZipOption"), exportZipEl=$("exportZip");
 const ocrModal=$("ocrModal"), ocrTitle=$("ocrTitle"), ocrStatus=$("ocrStatus"), ocrText=$("ocrText");
 // New UI elements
@@ -30,6 +32,7 @@ let pendingOptimized=null;
 let draggedPageIndex=-1;
 let pagePointerDrag=null;
 let isAutoRotating=false;
+let currentImageIsSavedPage=false;
 
 // UI State
 let selectedCompressionProfile = "balanced";
@@ -94,6 +97,8 @@ function setupProfileSelector(){
   
   profileSelect.onchange = (e) => {
     selectedCompressionProfile = e.target.value;
+    pendingOptimized = null;
+    sizeInfo.classList.remove("show");
     const profiles = compressionProfiles.getAllProfiles();
     const selected = profiles.find(p => p.id === selectedCompressionProfile);
     if(selected && profileHint){
@@ -402,6 +407,8 @@ function setupAutoCapture() {
   if (sourceCanvas && svg && quadEl) {
     cropUIManager.setOnCropChange((newCorners) => {
       corners = newCorners;
+      pendingOptimized = null;
+      sizeInfo.classList.remove("show");
       // Update quality feedback
       if (sourceCanvas) {
         const quality = qualityValidator.validateImage(sourceCanvas);
@@ -809,9 +816,10 @@ function loadImg(url){
 
 async function openForSelection(file){
   if(!cvReady) return toast("Scanner is still loading.");
-  if(currentImageURL) URL.revokeObjectURL(currentImageURL);
+  if(currentImageURL && !currentImageIsSavedPage) URL.revokeObjectURL(currentImageURL);
   currentFileName=file.name || "document";
   currentImageURL=URL.createObjectURL(file);
+  currentImageIsSavedPage=false;
   currentImage=await loadImg(currentImageURL);
   pendingOptimized=null;
   sizeInfo.classList.remove("show");
@@ -1206,9 +1214,21 @@ window.addEventListener("resize",()=>{
 $("resetCorners").onclick=()=>{
   pendingOptimized=null;
   sizeInfo.classList.remove("show");
-  if(detectedCorners.length) corners=detectedCorners.map(p=>({...p}));
-  else autoDetect();
-  renderCorners();
+  if(currentImageURL && !currentImageIsSavedPage) URL.revokeObjectURL(currentImageURL);
+  currentImageURL=null;
+  currentImage=null;
+  currentImageIsSavedPage=false;
+  currentFileName="";
+  corners=[];
+  detectedCorners=[];
+  sourceCanvas.width=1;
+  sourceCanvas.height=1;
+  selectionCard.style.display="none";
+  pdfPageManager.clearEditingPage();
+  cameraInput.value="";
+  galleryInput.value="";
+  setStatus("Capture cleared. Take or add a new photo.",0);
+  toast("Capture cleared");
 };
 
 function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
@@ -1383,7 +1403,7 @@ optimizeBtn.onclick=async()=>{
 
   try{
     const result=await buildScanVariants(selectedCompressionProfile);
-    pendingOptimized=result;
+    await showOptimizedCrop(result);
 
     beforeSizeEl.textContent=formatBytes(result.rawBlob.size);
     afterSizeEl.textContent=formatBytes(result.optimizedBlob.size);
@@ -1418,6 +1438,71 @@ optimizeBtn.onclick=async()=>{
   }
 };
 
+async function showOptimizedCrop(result){
+  const previewUrl=URL.createObjectURL(result.optimizedBlob);
+  const previewImage=await loadImg(previewUrl);
+
+  if(currentImageURL && !currentImageIsSavedPage) URL.revokeObjectURL(currentImageURL);
+  currentImageURL=previewUrl;
+  currentImageIsSavedPage=false;
+  currentImage=previewImage;
+  detectedCorners=[];
+  drawSource();
+
+  // The optimized image has already been cropped and perspective-corrected.
+  // Make the entire preview the current selection so no original area remains.
+  corners=[
+    {x:0,y:0},
+    {x:sourceCanvas.width,y:0},
+    {x:sourceCanvas.width,y:sourceCanvas.height},
+    {x:0,y:sourceCanvas.height}
+  ];
+  if(cropUIManager){
+    cropUIManager.setCorners(corners);
+    cropUIManager.render();
+  }
+  renderCorners();
+  pendingOptimized=result;
+}
+
+rotateSelectionBtn.onclick=async()=>{
+  if(!currentImage || !sourceCanvas.width || !sourceCanvas.height) return;
+
+  rotateSelectionBtn.disabled=true;
+  try{
+    const rotatedCanvas=document.createElement("canvas");
+    rotatedCanvas.width=sourceCanvas.height;
+    rotatedCanvas.height=sourceCanvas.width;
+    const ctx=rotatedCanvas.getContext("2d");
+    ctx.translate(rotatedCanvas.width,0);
+    ctx.rotate(Math.PI/2);
+    ctx.drawImage(sourceCanvas,0,0);
+
+    currentImage=await loadImg(rotatedCanvas.toDataURL("image/png"));
+    detectedCorners=[];
+    pendingOptimized=null;
+    sizeInfo.classList.remove("show");
+    drawSource();
+    corners=[
+      {x:0,y:0},
+      {x:sourceCanvas.width,y:0},
+      {x:sourceCanvas.width,y:sourceCanvas.height},
+      {x:0,y:sourceCanvas.height}
+    ];
+    if(cropUIManager){
+      cropUIManager.setCorners(corners);
+      cropUIManager.render();
+    }
+    renderCorners();
+    setStatus("Cropped image rotated. Save Page when ready.",90);
+  }catch(e){
+    console.error("Rotate selection error:",e);
+    toast("Could not rotate image.");
+  }finally{
+    rotateSelectionBtn.disabled=false;
+  }
+};
+
 $("saveSelection").onclick=async()=>{
   if(corners.length!==4 || !currentImage) return;
 
@@ -1429,7 +1514,8 @@ $("saveSelection").onclick=async()=>{
     let result=pendingOptimized;
 
     if(!result){
-      result=await buildScanVariants();
+      setStatus("Enhancing and compressing scanned pageâ€¦",75);
+      result=await buildScanVariants(selectedCompressionProfile);
     }
 
     const blob=result.optimizedBlob;
@@ -1498,8 +1584,10 @@ $("saveSelection").onclick=async()=>{
       if(next) await openForSelection(next);
     }else{
       selectionCard.style.display="none";
-      if(currentImageURL){URL.revokeObjectURL(currentImageURL);currentImageURL=null;}
+      if(currentImageURL && !currentImageIsSavedPage) URL.revokeObjectURL(currentImageURL);
+      currentImageURL=null;
       currentImage=null;
+      currentImageIsSavedPage=false;
       setStatus("Page saved. Add the next photo.",100);
       toast("Page "+pages.length+" saved");
       window.scrollTo({top:0,behavior:"smooth"});
@@ -1740,6 +1828,7 @@ async function editPage(i){
     // Set as current image for editing
     currentImage=img;
     currentImageURL=page.url;
+    currentImageIsSavedPage=true;
     selectionCard.style.display="block";
     
     // Draw to canvas
