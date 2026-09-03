@@ -237,8 +237,12 @@
       <strong id="previewTitle">Page preview</strong>
       <button class="close" id="closePreview">✕</button>
     </div>
-    <div class="preview-image-frame">
-      <img id="previewImage" alt="Page preview">
+    <div class="preview-image-frame" id="previewImageFrame">
+      <button class="preview-nav preview-nav-prev" id="previewPrev" aria-label="Previous page">‹</button>
+      <div class="preview-image-scroll" id="previewImageScroll">
+        <img id="previewImage" alt="Page preview">
+      </div>
+      <button class="preview-nav preview-nav-next" id="previewNext" aria-label="Next page">›</button>
     </div>
     <div class="modal-actions preview-actions">
       <button class="btn secondary" id="previewEdit">✎ Edit</button>

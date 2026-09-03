@@ -7,7 +7,7 @@ const selectionCard=$("selectionCard"), editor=$("editor"), sourceCanvas=$("sour
 const svg=$("selectionSvg"), quadEl=$("quad"), statusEl=$("status"), progressEl=$("progress");
 const pagesEl=$("pages"), emptyEl=$("empty"), pageCountEl=$("pageCount");
 const pdfBtn=$("pdfBtn"), clearAllBtn=$("clearAll"), toastEl=$("toast");
-const previewModal=$("previewModal"), previewImage=$("previewImage"), previewTitle=$("previewTitle");
+const previewModal=$("previewModal"), previewImage=$("previewImage"), previewTitle=$("previewTitle"), previewImageFrame=$("previewImageFrame"), previewImageScroll=$("previewImageScroll");
 const optimizeBtn={disabled:false}; // Enhancement is performed as part of Save Page.
 const sizeInfo=$("sizeInfo"), beforeSizeEl=$("beforeSize"), afterSizeEl=$("afterSize"), sizeSavingEl=$("sizeSaving");
 const rotateSelectionBtn=$("rotateSelection");
@@ -1866,6 +1866,13 @@ async function editPage(i){
 function openPreview(i){
   previewIndex=i; updatePreview(); previewModal.classList.add("open");
 }
+function movePreview(delta){
+  if(!pages.length || previewIndex<0) return;
+  const nextIndex=previewIndex+delta;
+  if(nextIndex<0 || nextIndex>=pages.length) return;
+  previewIndex=nextIndex;
+  updatePreview();
+}
 function updatePreview(){
   const p=pages[previewIndex]; if(!p)return;
   previewTitle.textContent=`Page ${previewIndex+1} of ${pages.length}`;
@@ -1873,6 +1880,40 @@ function updatePreview(){
 function closePreview(){previewModal.classList.remove("open");previewIndex=-1}
 $("closePreview").onclick=closePreview;
 previewModal.onclick=e=>{if(e.target===previewModal)closePreview()};
+
+// Swipe between scanned pages while keeping the action row fixed below.
+let previewSwipeStart=null;
+const previewScrollArea=previewImageScroll || previewImageFrame;
+if(previewScrollArea){
+  previewScrollArea.addEventListener("pointerdown", e=>{
+    if(e.pointerType === "mouse" && e.button !== 0) return;
+    if(e.target.closest("button")) return;
+    previewSwipeStart={x:e.clientX,y:e.clientY,pointerId:e.pointerId};
+  });
+  previewScrollArea.addEventListener("pointerup", e=>{
+    if(!previewSwipeStart || e.pointerId!==previewSwipeStart.pointerId) return;
+    const dx=e.clientX-previewSwipeStart.x;
+    const dy=e.clientY-previewSwipeStart.y;
+    previewSwipeStart=null;
+    if(Math.abs(dx)>=50 && Math.abs(dx)>Math.abs(dy)) movePreview(dx<0 ? 1 : -1);
+  });
+  previewScrollArea.addEventListener("pointercancel", ()=>{previewSwipeStart=null;});
+  previewScrollArea.addEventListener("touchstart", e=>{
+    const touch=e.changedTouches[0];
+    if(touch) previewSwipeStart={x:touch.clientX,y:touch.clientY,pointerId:"touch"};
+  }, {passive:true});
+  previewScrollArea.addEventListener("touchend", e=>{
+    const touch=e.changedTouches[0];
+    if(!touch || !previewSwipeStart || previewSwipeStart.pointerId!=="touch") return;
+    const dx=touch.clientX-previewSwipeStart.x;
+    const dy=touch.clientY-previewSwipeStart.y;
+    previewSwipeStart=null;
+    if(Math.abs(dx)>=40 && Math.abs(dx)>Math.abs(dy)) movePreview(dx<0 ? 1 : -1);
+  }, {passive:true});
+}
+
+$("previewPrev").onclick=e=>{e.stopPropagation();movePreview(-1)};
+$("previewNext").onclick=e=>{e.stopPropagation();movePreview(1)};
 $("previewRotate").onclick=()=>{if(previewIndex>=0)rotatePage(previewIndex)};
 $("previewDelete").onclick=()=>{if(previewIndex>=0)deletePage(previewIndex)};
 $("previewEdit").onclick=()=>{if(previewIndex>=0)editPage(previewIndex)};

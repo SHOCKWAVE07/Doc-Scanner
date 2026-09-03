@@ -129,11 +129,15 @@ input[type=file]{display:none}
 .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .modal-head strong{font-size:15px}
 .close{width:40px;height:40px;border-radius:12px;background:#eef3fa}
-.preview-image-frame{width:100%;height:min(70vh,520px);min-height:240px;display:flex;align-items:center;justify-content:flex-start;background:#111;border-radius:13px;overflow-x:auto;overflow-y:hidden;flex:1;min-height:0}
-#previewImage{display:block;width:auto;min-width:100%;height:100%;object-fit:contain;background:#111;border-radius:13px;transform-origin:center center;flex:0 0 auto}
+.preview-image-frame{position:relative;width:100%;height:min(70vh,520px);min-height:0;min-width:0;display:flex;align-items:stretch;justify-content:flex-start;background:#111;border-radius:13px;overflow:hidden;flex:1 1 0%;touch-action:pan-y}
+.preview-image-scroll{width:100%;height:100%;min-width:0;overflow:auto;display:flex;align-items:center;justify-content:flex-start;overscroll-behavior:contain}
+#previewImage{display:block;width:auto;height:auto;min-width:100%;min-height:100%;max-width:none;max-height:none;object-fit:contain;background:#111;border-radius:13px;transform-origin:center center;flex:0 0 auto}
+.preview-nav{position:absolute;z-index:2;top:50%;transform:translateY(-50%);width:42px;height:64px;border:0;border-radius:12px;background:rgba(0,0,0,.58);color:#fff;font-size:42px;line-height:1;display:grid;place-items:center;cursor:pointer;opacity:.9}
+.preview-nav:hover{background:rgba(11,99,246,.85)}
+.preview-nav-prev{left:10px}.preview-nav-next{right:10px}
 .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
 .preview-actions{grid-template-columns:repeat(4,minmax(0,1fr))}
-.preview-actions{flex-shrink:0}
+.preview-actions{position:relative;z-index:3;flex:0 0 auto;flex-shrink:0;background:#fff}
 .preview-actions .btn{min-width:0;padding:9px 4px;font-size:12px}
 .ocr-status{font-size:12px;color:var(--muted);margin:4px 0 8px;min-height:18px}
 .ocr-text{display:block;width:100%;min-height:280px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);background:#f8fafc;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;outline:none}
