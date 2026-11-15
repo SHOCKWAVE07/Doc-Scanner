@@ -404,22 +404,31 @@ class CropUIManager {
     this.magnifier.style.left = `${Math.max(0, left)}px`;
     this.magnifier.style.top = `${Math.max(0, top)}px`;
 
-    // Calculate source region
-    const canvasX = ((clientX - rect.left) / rect.width) * this.canvas.width;
-    const canvasY = ((clientY - rect.top) / rect.height) * this.canvas.height;
+    // Follow the actual handle, including off-center grabs and constrained
+    // midpoint movement, rather than the pointer's position within its hit area.
+    const index = this.draggedPointIndex;
+    const corner = this.corners[index];
+    const next = this.corners[(index + 1) % 4];
+    const point = this.draggedPointType === "midpoint"
+      ? { x: (corner.x + next.x) / 2, y: (corner.y + next.y) / 2 }
+      : corner;
+    if (!point || !rect.width || !rect.height) return;
 
-    const sourceSize = magnifierSize / zoomLevel;
-    const sourceX = Math.max(0, Math.min(this.canvas.width - sourceSize, canvasX - sourceSize / 2));
-    const sourceY = Math.max(0, Math.min(this.canvas.height - sourceSize, canvasY - sourceSize / 2));
+    const sourceWidth = (magnifierSize / zoomLevel) * this.canvas.width / rect.width;
+    const sourceHeight = (magnifierSize / zoomLevel) * this.canvas.height / rect.height;
+    // Leave out-of-image space blank instead of shifting the crosshair at edges.
+    const sourceX = point.x - sourceWidth / 2;
+    const sourceY = point.y - sourceHeight / 2;
 
     // Draw magnified region
     const ctx = magnifierCanvas.getContext("2d");
+    ctx.clearRect(0, 0, magnifierCanvas.width, magnifierCanvas.height);
     ctx.drawImage(
       this.canvas,
       sourceX,
       sourceY,
-      sourceSize,
-      sourceSize,
+      sourceWidth,
+      sourceHeight,
       0,
       0,
       magnifierCanvas.width,

@@ -2000,7 +2000,7 @@ function downloadBlob(blob,name){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-async function savePDF(fileName){
+async function savePDF(fileName, includeOcr=false){
   if(!pages.length) return;
 
   pdfBtn.disabled=true;
@@ -2072,7 +2072,7 @@ async function savePDF(fileName){
         "FAST"
       );
 
-      try{
+      if(includeOcr) try{
         setStatus(
           `Recognizing text on page ${i+1} of ${pages.length}…`,
           90+Math.round((i/pages.length)*8)
@@ -2119,11 +2119,19 @@ async function saveImages(fileName){
 }
 
 const confirmExportButton=$("confirmExport");
+const exportOcrEl=$("exportOcr");
+document.querySelectorAll('input[name="exportFormat"]').forEach(input=>{
+  input.addEventListener("change",()=>{
+    exportOcrEl.disabled=!exportPdfEl.checked;
+  });
+});
 
 function openExport(){
   if(!pages.length) return;
   exportImagesEl.disabled=pages.length!==1;
   if(pages.length!==1) exportPdfEl.checked=true;
+  exportOcrEl.checked=false;
+  exportOcrEl.disabled=!exportPdfEl.checked;
   exportModal.classList.add("open");
   exportNameEl.focus();
   exportNameEl.select();
@@ -2144,7 +2152,7 @@ async function confirmExport(){
     } else if(exportZipEl.checked) {
       await saveImagesZip(fileName);
     } else {
-      await savePDF(fileName);
+      await savePDF(fileName,exportOcrEl.checked);
     }
     setStatus("Downloads ready.",100);
     toast("Download complete");
