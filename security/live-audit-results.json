@@ -1,0 +1,2636 @@
+{
+  "checkedAtUtc": "2026-11-17T19:10:50.601Z",
+  "target": "https://docscannerme.netlify.app",
+  "method": "Read-only GETs; asset verification with at most four simultaneous requests; no attack payloads",
+  "checks": [
+    {
+      "name": "HTTPS page loads with valid certificate validation",
+      "result": "PASS",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "HTTP redirects to HTTPS",
+      "result": "PASS",
+      "detail": {
+        "status": 301,
+        "location": "https://docscannerme.netlify.app/"
+      }
+    },
+    {
+      "name": "Response header: content-security-policy",
+      "result": "PASS",
+      "detail": "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob: data:; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+    },
+    {
+      "name": "Response header: strict-transport-security",
+      "result": "PASS",
+      "detail": "max-age=31536000; includeSubDomains; preload"
+    },
+    {
+      "name": "Response header: x-content-type-options",
+      "result": "PASS",
+      "detail": "nosniff"
+    },
+    {
+      "name": "Response header: referrer-policy",
+      "result": "PASS",
+      "detail": "no-referrer"
+    },
+    {
+      "name": "Response header: permissions-policy",
+      "result": "PASS",
+      "detail": "camera=(self), microphone=(), geolocation=()"
+    },
+    {
+      "name": "Response header: x-frame-options",
+      "result": "PASS",
+      "detail": "DENY"
+    },
+    {
+      "name": "HTML is not cached for reuse",
+      "result": "PASS",
+      "detail": "no-store"
+    },
+    {
+      "name": "Framing is denied",
+      "result": "PASS"
+    },
+    {
+      "name": "No third-party script tags",
+      "result": "PASS",
+      "detail": [
+        "vendor/opencv-4.7.0/opencv.js",
+        "vendor/jscanify-1.4.3/src/jscanify.js",
+        "vendor/jspdf-4.2.1/dist/jspdf.umd.min.js",
+        "vendor/tesseract.js-5.1.1/dist/tesseract.min.js",
+        "js/config.js",
+        "js/state.js",
+        "js/services/security-policy.js",
+        "js/services/quality-validator.js",
+        "js/services/orientation-detector.js",
+        "js/services/enhancement-engine.js",
+        "js/services/compression-profiles.js",
+        "js/services/document-processor.js",
+        "js/services/stability-detector.js",
+        "js/services/auto-capture-manager.js",
+        "js/services/camera-stream-manager.js",
+        "js/services/pdf-import-handler.js",
+        "js/services/pdf-page-manager.js",
+        "js/ui/crop-ui-manager.js",
+        "js/ui/magnifier-ui.js",
+        "js/app.js"
+      ]
+    },
+    {
+      "name": "Deployed HTML matches workspace source",
+      "result": "REVIEW"
+    },
+    {
+      "name": "Deployed source matches workspace: /js/app.js",
+      "result": "PASS"
+    },
+    {
+      "name": "Deployed source matches workspace: /js/services/pdf-import-handler.js",
+      "result": "PASS"
+    },
+    {
+      "name": "Deployed source matches workspace: /js/services/security-policy.js",
+      "result": "PASS"
+    },
+    {
+      "name": "Live inventory matches reviewed asset digests",
+      "result": "PASS",
+      "detail": {
+        "assets": 224
+      }
+    },
+    {
+      "name": "All deployed assets match reviewed bytes",
+      "result": "REVIEW",
+      "detail": {
+        "count": 224,
+        "mismatches": [
+          "jscanify-1.4.3/src/jscanify.js",
+          "jscanify-1.4.3/LICENSE"
+        ]
+      }
+    },
+    {
+      "name": "PDF module MIME types support nosniff",
+      "result": "PASS",
+      "detail": [
+        {
+          "path": "pdfjs-dist-6.5.438/build/pdf.min.mjs",
+          "contentType": "application/javascript; charset=UTF-8"
+        },
+        {
+          "path": "pdfjs-dist-6.5.438/build/pdf.worker.min.mjs",
+          "contentType": "application/javascript; charset=UTF-8"
+        }
+      ]
+    },
+    {
+      "name": "OCR model is delivered as an intact gzip file",
+      "result": "PASS",
+      "detail": {
+        "contentType": "application/gzip",
+        "contentEncoding": null
+      }
+    },
+    {
+      "name": "Development and sensitive files are not published",
+      "result": "REVIEW",
+      "detail": [
+        {
+          "path": "/package.json",
+          "status": 200,
+          "contentType": "application/json",
+          "exposed": true,
+          "htmlFallback": false
+        },
+        {
+          "path": "/security/vapt-checks.cjs",
+          "status": 200,
+          "contentType": "application/octet-stream",
+          "exposed": true,
+          "htmlFallback": false
+        },
+        {
+          "path": "/VAPT_REPORT.md",
+          "status": 200,
+          "contentType": "text/markdown; charset=UTF-8",
+          "exposed": true,
+          "htmlFallback": false
+        },
+        {
+          "path": "/.git/HEAD",
+          "status": 404,
+          "contentType": "text/html; charset=utf-8",
+          "exposed": false,
+          "htmlFallback": true
+        },
+        {
+          "path": "/.env",
+          "status": 404,
+          "contentType": "text/html; charset=utf-8",
+          "exposed": false,
+          "htmlFallback": true
+        }
+      ]
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://docscannerme.netlify.app/",
+      "finalUrl": "https://docscannerme.netlify.app/",
+      "status": 200,
+      "headers": {
+        "accept-ranges": "bytes",
+        "age": "0",
+        "cache-control": "no-store",
+        "cache-status": "\"Netlify Edge\"; fwd=miss; fwd-status=200; stored",
+        "content-encoding": "br",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob: data:; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'",
+        "content-type": "text/html; charset=UTF-8",
+        "date": "Tue, 17 Nov 2026 19:11:05 GMT",
+        "etag": "W/\"ce6e7e4ffb0f94869f2d3a1cb033e730-ssl\"",
+        "permissions-policy": "camera=(self), microphone=(), geolocation=()",
+        "referrer-policy": "no-referrer",
+        "server": "Netlify",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "transfer-encoding": "chunked",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "x-nf-request-id": "01M7NEQ0DKC7FRRBD4GTH2GYEH"
+      },
+      "sha256": "ca4c4f0ffcdd1b7cba828296ecf8e1595ab232b29e22e2a8a0d38a786401bc02"
+    },
+    {
+      "url": "http://docscannerme.netlify.app/",
+      "finalUrl": "http://docscannerme.netlify.app/",
+      "status": 301,
+      "headers": {
+        "content-length": "48",
+        "content-type": "text/plain; charset=utf-8",
+        "date": "Tue, 17 Nov 2026 19:11:05 GMT",
+        "location": "https://docscannerme.netlify.app/",
+        "server": "Netlify",
+        "x-nf-request-id": "01M7NEQ0YE89W1MF1ANZT99JQ4"
+      }
+    },
+    {
+      "url": "https://docscannerme.netlify.app/js/app.js",
+      "finalUrl": "https://docscannerme.netlify.app/js/app.js",
+      "status": 200,
+      "headers": {
+        "accept-ranges": "bytes",
+        "age": "1",
+        "cache-control": "public,max-age=0,must-revalidate",
+        "cache-status": "\"Netlify Edge\"; fwd=miss; fwd-status=200; stored",
+        "content-encoding": "br",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob: data:; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'",
+        "content-type": "application/javascript; charset=UTF-8",
+        "date": "Tue, 17 Nov 2026 19:11:06 GMT",
+        "etag": "W/\"1b8084ae3803ca91ca2730cc8463466e-ssl\"",
+        "permissions-policy": "camera=(self), microphone=(), geolocation=()",
+        "referrer-policy": "no-referrer",
+        "server": "Netlify",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "transfer-encoding": "chunked",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "x-nf-request-id": "01M7NEQ17H58HQ9SG96TW0M2FK"
+      },
+      "sha256": "d195d72e29657d009e65f7fe36c1b5dd210fa69945cbdb239d7eed3c938a9516"
+    },
+    {
+      "url": "https://docscannerme.netlify.app/js/services/pdf-import-handler.js",
+      "finalUrl": "https://docscannerme.netlify.app/js/services/pdf-import-handler.js",
+      "status": 200,
+      "headers": {
+        "accept-ranges": "bytes",
+        "age": "1",
+        "cache-control": "public,max-age=0,must-revalidate",
+        "cache-status": "\"Netlify Edge\"; fwd=miss; fwd-status=200; stored",
+        "content-encoding": "br",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob: data:; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'",
+        "content-type": "application/javascript; charset=UTF-8",
+        "date": "Tue, 17 Nov 2026 19:11:07 GMT",
+        "etag": "W/\"2a6701942d1257b8244b20093eae54f1-ssl\"",
+        "permissions-policy": "camera=(self), microphone=(), geolocation=()",
+        "referrer-policy": "no-referrer",
+        "server": "Netlify",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "transfer-encoding": "chunked",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "x-nf-request-id": "01M7NEQ25JY00N8F5SMYBA1JXX"
+      },
+      "sha256": "82c3731b041c83ebf12bb27b391add922a9b9cf5e23893625dacb3b61fb8023b"
+    },
+    {
+      "url": "https://docscannerme.netlify.app/js/services/security-policy.js",
+      "finalUrl": "https://docscannerme.netlify.app/js/services/security-policy.js",
+      "status": 200,
+      "headers": {
+        "accept-ranges": "bytes",
+        "age": "0",
+        "cache-control": "public,max-age=0,must-revalidate",
+        "cache-status": "\"Netlify Edge\"; fwd=miss; fwd-status=200; stored",
+        "content-encoding": "br",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob: data:; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'",
+        "content-type": "application/javascript; charset=UTF-8",
+        "date": "Tue, 17 Nov 2026 19:11:07 GMT",
+        "etag": "W/\"04adf86a9a348555ecd5af26341e7317-ssl\"",
+        "permissions-policy": "camera=(self), microphone=(), geolocation=()",
+        "referrer-policy": "no-referrer",
+        "server": "Netlify",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "transfer-encoding": "chunked",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "x-nf-request-id": "01M7NEQ2ECBXBGMWCQNS0FHDC2"
+      },
+      "sha256": "b0530a0a14f8ae91f3951fa52b888fd974d5b200530084fd82861df8dbd37944"
+    }
+  ],
+  "assets": [
+    {
+      "path": "README.md",
+      "status": 200,
+      "bytes": 1257,
+      "contentType": "text/markdown; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "5cff5d3ee8afb9471c2457335d40fc4225ce1d51201d0de2378562fea34f0503",
+      "expectedSha256": "5cff5d3ee8afb9471c2457335d40fc4225ce1d51201d0de2378562fea34f0503",
+      "match": true
+    },
+    {
+      "path": "jspdf-4.2.1/LICENSE",
+      "status": 200,
+      "bytes": 1142,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "dc388ec35ff463288cdde3588a36fd4ed12a45deff053243b37309acc9ef583b",
+      "expectedSha256": "dc388ec35ff463288cdde3588a36fd4ed12a45deff053243b37309acc9ef583b",
+      "match": true
+    },
+    {
+      "path": "jscanify-1.4.3/src/jscanify.js",
+      "status": 200,
+      "bytes": 7322,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "7463ca648de2c081a07ef556e79d5d6b7525f2a5e2ca55fefdcb69608b014ea3",
+      "expectedSha256": "a09dadd36ad4103e693523677f1aba3740d06f2dcdeb3ed87c66022e6ac0d13d",
+      "match": false
+    },
+    {
+      "path": "jscanify-1.4.3/LICENSE",
+      "status": 200,
+      "bytes": 1069,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "ffc790f0e6cc0f291593248135c1893669701742f8975738ec2513bab9e1e33d",
+      "expectedSha256": "5a4b4d2c8d93589a1f59d350d0b7fdde81e6d1892ed468eee9b4740d190d1939",
+      "match": false
+    },
+    {
+      "path": "jszip-3.10.1/LICENSE.markdown",
+      "status": 200,
+      "bytes": 33753,
+      "contentType": "text/markdown; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "566c953c6090b1218ca6217dd7359d45dde46581968586dc607d59a78af6a9c4",
+      "expectedSha256": "566c953c6090b1218ca6217dd7359d45dde46581968586dc607d59a78af6a9c4",
+      "match": true
+    },
+    {
+      "path": "jszip-3.10.1/dist/jszip.min.js",
+      "status": 200,
+      "bytes": 97630,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "acc7e41455a80765b5fd9c7ee1b8078a6d160bbbca455aeae854de65c947d59e",
+      "expectedSha256": "acc7e41455a80765b5fd9c7ee1b8078a6d160bbbca455aeae854de65c947d59e",
+      "match": true
+    },
+    {
+      "path": "opencv-4.7.0/LICENSE",
+      "status": 200,
+      "bytes": 11358,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "expectedSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "match": true
+    },
+    {
+      "path": "jspdf-4.2.1/dist/jspdf.umd.min.js",
+      "status": 200,
+      "bytes": 420165,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "e6551fcdc32f09d6853b2c5126d18d01d9447e0da618a41a11ebeee0f6c20d54",
+      "expectedSha256": "e6551fcdc32f09d6853b2c5126d18d01d9447e0da618a41a11ebeee0f6c20d54",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/LICENSE",
+      "status": 200,
+      "bytes": 10174,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "expectedSha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "match": true
+    },
+    {
+      "path": "opencv-4.7.0/opencv.js",
+      "status": 200,
+      "bytes": 8980560,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "7beec9c6b373927a6d68b145bff380a7b5c7f1b4a8c32bf88d11e591e54930a6",
+      "expectedSha256": "7beec9c6b373927a6d68b145bff380a7b5c7f1b4a8c32bf88d11e591e54930a6",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/build/pdf.min.mjs",
+      "status": 200,
+      "bytes": 474284,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "3a88402882cfa3e7e72c2c9b5149f52f0f88baf1c5b62aa11a41abdbc2072440",
+      "expectedSha256": "3a88402882cfa3e7e72c2c9b5149f52f0f88baf1c5b62aa11a41abdbc2072440",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/78-EUC-H.bcmap",
+      "status": 200,
+      "bytes": 2404,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "d92a261336dc18b8c03a46eb4d462382d33f4338fa195d303256b2031434c874",
+      "expectedSha256": "d92a261336dc18b8c03a46eb4d462382d33f4338fa195d303256b2031434c874",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/78-EUC-V.bcmap",
+      "status": 200,
+      "bytes": 173,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "61670bebc4e4827b67230c054fd0d820d6e30c3584d02e386804e62bbedc032a",
+      "expectedSha256": "61670bebc4e4827b67230c054fd0d820d6e30c3584d02e386804e62bbedc032a",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/78-H.bcmap",
+      "status": 200,
+      "bytes": 2379,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "ece6415b853d61e1b2560165151407d35cf16e6556932b85a13ea75276b77402",
+      "expectedSha256": "ece6415b853d61e1b2560165151407d35cf16e6556932b85a13ea75276b77402",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/78-RKSJ-V.bcmap",
+      "status": 200,
+      "bytes": 173,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "53cb6d560ab377da48cf65d6dcacb0bdb31f13fab7066c580de38c12a73a7ff9",
+      "expectedSha256": "53cb6d560ab377da48cf65d6dcacb0bdb31f13fab7066c580de38c12a73a7ff9",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/78-RKSJ-H.bcmap",
+      "status": 200,
+      "bytes": 2398,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "696b1f973c97623496703809eaaa5f9b40696c77540057413f4b826a08edfa7b",
+      "expectedSha256": "696b1f973c97623496703809eaaa5f9b40696c77540057413f4b826a08edfa7b",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/78-V.bcmap",
+      "status": 200,
+      "bytes": 169,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "289000f02fd34872b6975503217f33abae6bee676e7d28f640473a67c8db1712",
+      "expectedSha256": "289000f02fd34872b6975503217f33abae6bee676e7d28f640473a67c8db1712",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/78ms-RKSJ-H.bcmap",
+      "status": 200,
+      "bytes": 2651,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a2442595218f5f8bd8e1b42188e368587d876cfe0cc4cd87196f077c878f72e2",
+      "expectedSha256": "a2442595218f5f8bd8e1b42188e368587d876cfe0cc4cd87196f077c878f72e2",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/78ms-RKSJ-V.bcmap",
+      "status": 200,
+      "bytes": 290,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "f8ddceba96bfd9d3740bd1789ee30d1f47c78371520a8084f71f7df58f19be0b",
+      "expectedSha256": "f8ddceba96bfd9d3740bd1789ee30d1f47c78371520a8084f71f7df58f19be0b",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/83pv-RKSJ-H.bcmap",
+      "status": 200,
+      "bytes": 905,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "44040051ec818fe09b9703472bea72efd2759d5eeb5ff0d77c718d6bb5e6d1df",
+      "expectedSha256": "44040051ec818fe09b9703472bea72efd2759d5eeb5ff0d77c718d6bb5e6d1df",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/build/pdf.worker.min.mjs",
+      "status": 200,
+      "bytes": 1271915,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "1e64c8240e54735ec5913b37acd5134747799cb8c6bb3777c70adbc01232d2aa",
+      "expectedSha256": "1e64c8240e54735ec5913b37acd5134747799cb8c6bb3777c70adbc01232d2aa",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/90ms-RKSJ-H.bcmap",
+      "status": 200,
+      "bytes": 721,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "c13e043e85ff715b75bb03801e8fd0fb8f3a75e4a48496faa6baaf92b5b48ba1",
+      "expectedSha256": "c13e043e85ff715b75bb03801e8fd0fb8f3a75e4a48496faa6baaf92b5b48ba1",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/90ms-RKSJ-V.bcmap",
+      "status": 200,
+      "bytes": 290,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "499bb916ce1adbe4289b6e5811f4dc20eb238cdc2ffad20cf26ae56716885bab",
+      "expectedSha256": "499bb916ce1adbe4289b6e5811f4dc20eb238cdc2ffad20cf26ae56716885bab",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/90msp-RKSJ-H.bcmap",
+      "status": 200,
+      "bytes": 715,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "7b8b3b8bbf821702e9a4df9f3596ce292380c8c1b0925dedadbb4e4b2d80498b",
+      "expectedSha256": "7b8b3b8bbf821702e9a4df9f3596ce292380c8c1b0925dedadbb4e4b2d80498b",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/90msp-RKSJ-V.bcmap",
+      "status": 200,
+      "bytes": 291,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "6296c2b5c07dca8128e96d5296d621a3268803d4fa0e5812a21e52fe2802aacb",
+      "expectedSha256": "6296c2b5c07dca8128e96d5296d621a3268803d4fa0e5812a21e52fe2802aacb",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/90pv-RKSJ-H.bcmap",
+      "status": 200,
+      "bytes": 982,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "fb5103f03d3a34547e18d316e52b6d9b26e485c662999222f84d2ba54c2e4fa8",
+      "expectedSha256": "fb5103f03d3a34547e18d316e52b6d9b26e485c662999222f84d2ba54c2e4fa8",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/90pv-RKSJ-V.bcmap",
+      "status": 200,
+      "bytes": 260,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "7bcb5ad2ba55b9662ce379e16c2d9cc2b82d621a579807353741172e4af615c2",
+      "expectedSha256": "7bcb5ad2ba55b9662ce379e16c2d9cc2b82d621a579807353741172e4af615c2",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Add-H.bcmap",
+      "status": 200,
+      "bytes": 2419,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a2ffab28b990998181bcca9b0e914bb2207820f100ae31d5c469444892e5ad8e",
+      "expectedSha256": "a2ffab28b990998181bcca9b0e914bb2207820f100ae31d5c469444892e5ad8e",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Add-RKSJ-H.bcmap",
+      "status": 200,
+      "bytes": 2413,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "b29f4b52e2465d0485856d5e69f1ba69927deb2848d8fd328c8035583b35bb7e",
+      "expectedSha256": "b29f4b52e2465d0485856d5e69f1ba69927deb2848d8fd328c8035583b35bb7e",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Add-RKSJ-V.bcmap",
+      "status": 200,
+      "bytes": 287,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "2aa2232c283a3f5d0997c2834a36cead0b79ce2657944cfeed08140c293460ff",
+      "expectedSha256": "2aa2232c283a3f5d0997c2834a36cead0b79ce2657944cfeed08140c293460ff",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Add-V.bcmap",
+      "status": 200,
+      "bytes": 282,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "25125d3b1be64e86b2df5b3344170b45a42bcaa0b46e43a34314ef73c166e542",
+      "expectedSha256": "25125d3b1be64e86b2df5b3344170b45a42bcaa0b46e43a34314ef73c166e542",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-CNS1-0.bcmap",
+      "status": 200,
+      "bytes": 317,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "8c65be9d51a9f269a547dc12460707aaf4031ab67ebe8a2900f4b4cc6b3e450e",
+      "expectedSha256": "8c65be9d51a9f269a547dc12460707aaf4031ab67ebe8a2900f4b4cc6b3e450e",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-CNS1-1.bcmap",
+      "status": 200,
+      "bytes": 371,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "73152bc1a59cc594b414ac6068be48e5512b96ae85920c40e32a99269fdb0c04",
+      "expectedSha256": "73152bc1a59cc594b414ac6068be48e5512b96ae85920c40e32a99269fdb0c04",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-CNS1-2.bcmap",
+      "status": 200,
+      "bytes": 376,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a1b8d353bdef9584c820464e8f1c9e2013d64ebf433cba0aa831dddf515818c2",
+      "expectedSha256": "a1b8d353bdef9584c820464e8f1c9e2013d64ebf433cba0aa831dddf515818c2",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-CNS1-3.bcmap",
+      "status": 200,
+      "bytes": 401,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "2ffc0c75c79fafde506163d3c08c390d183251009f3fbf6ae50d1167d14b9570",
+      "expectedSha256": "2ffc0c75c79fafde506163d3c08c390d183251009f3fbf6ae50d1167d14b9570",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-CNS1-4.bcmap",
+      "status": 200,
+      "bytes": 405,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "98a1f470c878c6b9691a4d7aef776af8ac9b55f5587c9fafa00547f3bf655716",
+      "expectedSha256": "98a1f470c878c6b9691a4d7aef776af8ac9b55f5587c9fafa00547f3bf655716",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-CNS1-5.bcmap",
+      "status": 200,
+      "bytes": 406,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "ddd6e29955eb8cb545f2ebd09c628c3bbda5023256eda1b728f743c75fb77829",
+      "expectedSha256": "ddd6e29955eb8cb545f2ebd09c628c3bbda5023256eda1b728f743c75fb77829",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-CNS1-6.bcmap",
+      "status": 200,
+      "bytes": 406,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "317bb2db71e0e5b7b0c47b75de1da915c2e22f65f0c0861507f9ca7ba238f8a2",
+      "expectedSha256": "317bb2db71e0e5b7b0c47b75de1da915c2e22f65f0c0861507f9ca7ba238f8a2",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-GB1-0.bcmap",
+      "status": 200,
+      "bytes": 217,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "8b81cce8a11d510e505704953cfa4e4ab080c1a0cab991145a3512ee433946b9",
+      "expectedSha256": "8b81cce8a11d510e505704953cfa4e4ab080c1a0cab991145a3512ee433946b9",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-CNS1-UCS2.bcmap",
+      "status": 200,
+      "bytes": 41193,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "e665837f2197c6bd08cd8955ad4d6932cee2398e2e328b25b00e6bfb3bd72af9",
+      "expectedSha256": "e665837f2197c6bd08cd8955ad4d6932cee2398e2e328b25b00e6bfb3bd72af9",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-GB1-1.bcmap",
+      "status": 200,
+      "bytes": 250,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "0426983081788ec7202703e71f1efa4b860f75b936994236010b39d89251a81e",
+      "expectedSha256": "0426983081788ec7202703e71f1efa4b860f75b936994236010b39d89251a81e",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-GB1-2.bcmap",
+      "status": 200,
+      "bytes": 465,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "e67b37a83b160ab3831306a71a605893b24454ee81ac9b6123bf2d3984d268d5",
+      "expectedSha256": "e67b37a83b160ab3831306a71a605893b24454ee81ac9b6123bf2d3984d268d5",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-GB1-4.bcmap",
+      "status": 200,
+      "bytes": 601,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "8fbd7d74c2ddb1350c1cecce54a73fde3f5453093d4bed445283ec0033d2097f",
+      "expectedSha256": "8fbd7d74c2ddb1350c1cecce54a73fde3f5453093d4bed445283ec0033d2097f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-GB1-3.bcmap",
+      "status": 200,
+      "bytes": 470,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "aa299afc3e12a28726147305f191be28c7498078c8b182ece7886ac79cd99078",
+      "expectedSha256": "aa299afc3e12a28726147305f191be28c7498078c8b182ece7886ac79cd99078",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-GB1-5.bcmap",
+      "status": 200,
+      "bytes": 625,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "c22cb2fcff24112fa31dab2111bdc51957006576d31aad5a25e67793ac01428c",
+      "expectedSha256": "c22cb2fcff24112fa31dab2111bdc51957006576d31aad5a25e67793ac01428c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-GB1-UCS2.bcmap",
+      "status": 200,
+      "bytes": 33974,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "20507620260c0c935c35afc1e70e5888aa7125d5ec7ffc03cef1959feb2c1641",
+      "expectedSha256": "20507620260c0c935c35afc1e70e5888aa7125d5ec7ffc03cef1959feb2c1641",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Japan1-0.bcmap",
+      "status": 200,
+      "bytes": 225,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "464f08905236f5703b1f5cf8358767c8b18e6bcc808840d081f1de2c7ab38134",
+      "expectedSha256": "464f08905236f5703b1f5cf8358767c8b18e6bcc808840d081f1de2c7ab38134",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Japan1-1.bcmap",
+      "status": 200,
+      "bytes": 226,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "4c823848722187d1ffe75ae3f5f9126ccd2d7895a05fad14c919fb119e037008",
+      "expectedSha256": "4c823848722187d1ffe75ae3f5f9126ccd2d7895a05fad14c919fb119e037008",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Japan1-2.bcmap",
+      "status": 200,
+      "bytes": 233,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "7810fb808e367e70429e90a9478fe6a3fdc3e214f25c7582ce9c2da6a242315c",
+      "expectedSha256": "7810fb808e367e70429e90a9478fe6a3fdc3e214f25c7582ce9c2da6a242315c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Japan1-3.bcmap",
+      "status": 200,
+      "bytes": 242,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "84deb1828711ad3d390c9899c38abce1bf619d65ff7bf1a326ec95acc45f08f8",
+      "expectedSha256": "84deb1828711ad3d390c9899c38abce1bf619d65ff7bf1a326ec95acc45f08f8",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Japan1-5.bcmap",
+      "status": 200,
+      "bytes": 430,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "1d3ce4ff28d977f8cf37a912ae4ec811f4175c3167b1ec0b2567feec3e79e1db",
+      "expectedSha256": "1d3ce4ff28d977f8cf37a912ae4ec811f4175c3167b1ec0b2567feec3e79e1db",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Japan1-4.bcmap",
+      "status": 200,
+      "bytes": 337,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "3f8a4f974919c2b8bae5d10175ffa2673be140481e00840542c85d48ef184067",
+      "expectedSha256": "3f8a4f974919c2b8bae5d10175ffa2673be140481e00840542c85d48ef184067",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Japan1-6.bcmap",
+      "status": 200,
+      "bytes": 485,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "5609797b9401b30be72ef9645da62a87829f058c3be4b5c623383119f584b1d9",
+      "expectedSha256": "5609797b9401b30be72ef9645da62a87829f058c3be4b5c623383119f584b1d9",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Korea1-0.bcmap",
+      "status": 200,
+      "bytes": 241,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "dfb8c3874f0e5a8c3acf597d2c12d2b63e90bc5e4f0fce990ec4c56077d80b32",
+      "expectedSha256": "dfb8c3874f0e5a8c3acf597d2c12d2b63e90bc5e4f0fce990ec4c56077d80b32",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Korea1-1.bcmap",
+      "status": 200,
+      "bytes": 386,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "62f277b7b1c441c007797ae707d5c37258d029ce4661a2b911e2e1ee35e6adc1",
+      "expectedSha256": "62f277b7b1c441c007797ae707d5c37258d029ce4661a2b911e2e1ee35e6adc1",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Japan1-UCS2.bcmap",
+      "status": 200,
+      "bytes": 40951,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "66c5d0dc4964f4093e77b194023f3a0f689324028ec8330e1e1d0570bcba7c2f",
+      "expectedSha256": "66c5d0dc4964f4093e77b194023f3a0f689324028ec8330e1e1d0570bcba7c2f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Korea1-2.bcmap",
+      "status": 200,
+      "bytes": 391,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "1d77068af462f96d7ad28ad7e7d43eef6423c685b479d7dc25ff5df38db0380d",
+      "expectedSha256": "1d77068af462f96d7ad28ad7e7d43eef6423c685b479d7dc25ff5df38db0380d",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/B5-H.bcmap",
+      "status": 200,
+      "bytes": 1086,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "718ad0ffbef4c34f8f3f31292c462e519cd567a5511fc8b346c60010d64f4ef9",
+      "expectedSha256": "718ad0ffbef4c34f8f3f31292c462e519cd567a5511fc8b346c60010d64f4ef9",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/B5-V.bcmap",
+      "status": 200,
+      "bytes": 142,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "b5c37383517477620ced927b6b4ffd4f4cc6230d8051b5b46a21d6768e07f7d8",
+      "expectedSha256": "b5c37383517477620ced927b6b4ffd4f4cc6230d8051b5b46a21d6768e07f7d8",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Adobe-Korea1-UCS2.bcmap",
+      "status": 200,
+      "bytes": 23293,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "857b723088be97255053562bfa41bd1075a7f7910d3bab59a0645c8bbc7060ff",
+      "expectedSha256": "857b723088be97255053562bfa41bd1075a7f7910d3bab59a0645c8bbc7060ff",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/B5pc-H.bcmap",
+      "status": 200,
+      "bytes": 1099,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "bab6028aead1d6149400e904ab10cfd319082d826473ed4c582c8eeed920f17e",
+      "expectedSha256": "bab6028aead1d6149400e904ab10cfd319082d826473ed4c582c8eeed920f17e",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/B5pc-V.bcmap",
+      "status": 200,
+      "bytes": 144,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "41543142b9767f3b76133899fc8453282b01ad3c653acaeea42d78c5a7d08c63",
+      "expectedSha256": "41543142b9767f3b76133899fc8453282b01ad3c653acaeea42d78c5a7d08c63",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/CNS-EUC-H.bcmap",
+      "status": 200,
+      "bytes": 1780,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "e8f89cd61e6486b948205da46499d659ed0aed949b7095fd3c8e95ffe2b0e7a9",
+      "expectedSha256": "e8f89cd61e6486b948205da46499d659ed0aed949b7095fd3c8e95ffe2b0e7a9",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/CNS-EUC-V.bcmap",
+      "status": 200,
+      "bytes": 1920,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "cae422bec2ac6dbe86bf921cec942bacd2d0b733ffcca5f91b3ba14e917025a0",
+      "expectedSha256": "cae422bec2ac6dbe86bf921cec942bacd2d0b733ffcca5f91b3ba14e917025a0",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/CNS1-H.bcmap",
+      "status": 200,
+      "bytes": 706,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "e8487971ab20cd16f3de3e8ac56ec994b72b658ad113f2818239dfd5108f501a",
+      "expectedSha256": "e8487971ab20cd16f3de3e8ac56ec994b72b658ad113f2818239dfd5108f501a",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/CNS2-H.bcmap",
+      "status": 200,
+      "bytes": 504,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "bc6024d274d440f0625c69e25f37036ef6cb6689432ceaa160d3432a2a716ca7",
+      "expectedSha256": "bc6024d274d440f0625c69e25f37036ef6cb6689432ceaa160d3432a2a716ca7",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/CNS1-V.bcmap",
+      "status": 200,
+      "bytes": 143,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "42df8076aaa7574505e7304af83a3323ec032c4177d64b1309db8c043d594a8a",
+      "expectedSha256": "42df8076aaa7574505e7304af83a3323ec032c4177d64b1309db8c043d594a8a",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/CNS2-V.bcmap",
+      "status": 200,
+      "bytes": 93,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "2e4f70a8afd23a121030fc2e5b5f3816e903b11e7ba8b8c09654b31c80399c38",
+      "expectedSha256": "2e4f70a8afd23a121030fc2e5b5f3816e903b11e7ba8b8c09654b31c80399c38",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/ETHK-B5-H.bcmap",
+      "status": 200,
+      "bytes": 4426,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "d2f10fa519336bc4efcc7b6deb9604b75429946b40d82e311cb3a97a1994c89a",
+      "expectedSha256": "d2f10fa519336bc4efcc7b6deb9604b75429946b40d82e311cb3a97a1994c89a",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/ETHK-B5-V.bcmap",
+      "status": 200,
+      "bytes": 158,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "1fea3fd0d9f0f679f80505800851ef2e4131d81127e18c006938ffa2f4c8b247",
+      "expectedSha256": "1fea3fd0d9f0f679f80505800851ef2e4131d81127e18c006938ffa2f4c8b247",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/ETenms-B5-H.bcmap",
+      "status": 200,
+      "bytes": 101,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "d5f5a73da4173b7da9a3a20e16f26f9cd5d12deb1553409919e0cec6fd37fdee",
+      "expectedSha256": "d5f5a73da4173b7da9a3a20e16f26f9cd5d12deb1553409919e0cec6fd37fdee",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/ETen-B5-V.bcmap",
+      "status": 200,
+      "bytes": 158,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "47dc0d2c21e3bde317947aec1675ceabc1d5460a60bf9c24334b8c407a17172c",
+      "expectedSha256": "47dc0d2c21e3bde317947aec1675ceabc1d5460a60bf9c24334b8c407a17172c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/ETen-B5-H.bcmap",
+      "status": 200,
+      "bytes": 1125,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "87ee6b3f5bfda5fe26fa35431264c7d73070d10dbbf398a75185d63ae322c18d",
+      "expectedSha256": "87ee6b3f5bfda5fe26fa35431264c7d73070d10dbbf398a75185d63ae322c18d",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/ETenms-B5-V.bcmap",
+      "status": 200,
+      "bytes": 172,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "18252fca90f472f479af1bddd60d6ab51c8e1b55dcf6845951426504934543e0",
+      "expectedSha256": "18252fca90f472f479af1bddd60d6ab51c8e1b55dcf6845951426504934543e0",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/EUC-H.bcmap",
+      "status": 200,
+      "bytes": 578,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "f9939cd57fccdc65c5d9f4c205fd497ebdbd283643308da5663801a8c1d9c595",
+      "expectedSha256": "f9939cd57fccdc65c5d9f4c205fd497ebdbd283643308da5663801a8c1d9c595",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/EUC-V.bcmap",
+      "status": 200,
+      "bytes": 170,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "1283a50a706507c4436da83ede9ad7a4440be25378f2e96f6c81a430081426a3",
+      "expectedSha256": "1283a50a706507c4436da83ede9ad7a4440be25378f2e96f6c81a430081426a3",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Ext-H.bcmap",
+      "status": 200,
+      "bytes": 2536,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "4000ed4e61a1c668ef453bbd0603cfa383defa793abd46a57ed870d7f527350b",
+      "expectedSha256": "4000ed4e61a1c668ef453bbd0603cfa383defa793abd46a57ed870d7f527350b",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Ext-RKSJ-H.bcmap",
+      "status": 200,
+      "bytes": 2542,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "e0d2f0df337660e73813238dd4a725f11f0621b90f3273857db253d0e7694caa",
+      "expectedSha256": "e0d2f0df337660e73813238dd4a725f11f0621b90f3273857db253d0e7694caa",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Ext-RKSJ-V.bcmap",
+      "status": 200,
+      "bytes": 218,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "f617a22b6d67febb187990952006c91a9f5a4db21155d268c656252d0c21985d",
+      "expectedSha256": "f617a22b6d67febb187990952006c91a9f5a4db21155d268c656252d0c21985d",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GB-EUC-H.bcmap",
+      "status": 200,
+      "bytes": 549,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "928bad06fd84a48f5ba7150d7716609119fb660f2aaa73eccad81ddab9b9d203",
+      "expectedSha256": "928bad06fd84a48f5ba7150d7716609119fb660f2aaa73eccad81ddab9b9d203",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Ext-V.bcmap",
+      "status": 200,
+      "bytes": 215,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "c2087fb845a9e3acea0c2922cd40e6af67e11957bec74dcd597f1285edd490ce",
+      "expectedSha256": "c2087fb845a9e3acea0c2922cd40e6af67e11957bec74dcd597f1285edd490ce",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GB-H.bcmap",
+      "status": 200,
+      "bytes": 528,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "1018c777a8910b5bb46d7d54a4aee9d51ca5cff8addb2b41c969d9101cb3fd1c",
+      "expectedSha256": "1018c777a8910b5bb46d7d54a4aee9d51ca5cff8addb2b41c969d9101cb3fd1c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GB-EUC-V.bcmap",
+      "status": 200,
+      "bytes": 179,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a9ad88ac2479da529b16dc48abc5952332e27bc355335f91df5729a587533324",
+      "expectedSha256": "a9ad88ac2479da529b16dc48abc5952332e27bc355335f91df5729a587533324",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GB-V.bcmap",
+      "status": 200,
+      "bytes": 175,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "0b96789143c0bbf9f1641ae7165b3456dccd14dabffcbb0bd654d5bf6f94f863",
+      "expectedSha256": "0b96789143c0bbf9f1641ae7165b3456dccd14dabffcbb0bd654d5bf6f94f863",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBK-EUC-H.bcmap",
+      "status": 200,
+      "bytes": 14692,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "2103fed28650ede096a2281104a1a8a4304dae0db414342c636867522307123b",
+      "expectedSha256": "2103fed28650ede096a2281104a1a8a4304dae0db414342c636867522307123b",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBK-EUC-V.bcmap",
+      "status": 200,
+      "bytes": 180,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a7fd35dd14d9dbdb955f34e6c0630618b6620dfd09d4283b2f65a65ce77fcaea",
+      "expectedSha256": "a7fd35dd14d9dbdb955f34e6c0630618b6620dfd09d4283b2f65a65ce77fcaea",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBK2K-V.bcmap",
+      "status": 200,
+      "bytes": 219,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "b927fdfd595c07ce9158bf2ec13f4641b2e83b01c70989dadfabd6ed7c6ac2dc",
+      "expectedSha256": "b927fdfd595c07ce9158bf2ec13f4641b2e83b01c70989dadfabd6ed7c6ac2dc",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBK2K-H.bcmap",
+      "status": 200,
+      "bytes": 19662,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "3d919ae72af16c5cc6846ec87a4326a9f125e493c59d3628429d35c2c95fe8c4",
+      "expectedSha256": "3d919ae72af16c5cc6846ec87a4326a9f125e493c59d3628429d35c2c95fe8c4",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBKp-EUC-H.bcmap",
+      "status": 200,
+      "bytes": 14686,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "d15ebd8e81fb4fe8a244f1b1e877922e03500ac69eddf5001093e502430451d2",
+      "expectedSha256": "d15ebd8e81fb4fe8a244f1b1e877922e03500ac69eddf5001093e502430451d2",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBKp-EUC-V.bcmap",
+      "status": 200,
+      "bytes": 181,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "fdc736d46e642625dccc8ad8c59f2c69fc7db7a13f2e799c6c6b779e707bb97a",
+      "expectedSha256": "fdc736d46e642625dccc8ad8c59f2c69fc7db7a13f2e799c6c6b779e707bb97a",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBT-EUC-H.bcmap",
+      "status": 200,
+      "bytes": 7290,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "dc5f44e48a39f3367ae28665027d8ab1d8cedb5a9dcc5068a900acd6709f60f9",
+      "expectedSha256": "dc5f44e48a39f3367ae28665027d8ab1d8cedb5a9dcc5068a900acd6709f60f9",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBT-EUC-V.bcmap",
+      "status": 200,
+      "bytes": 180,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a1ad24e63653b8aa388c18fa5e498f007564e43dde699a9f91ccb4645c999be8",
+      "expectedSha256": "a1ad24e63653b8aa388c18fa5e498f007564e43dde699a9f91ccb4645c999be8",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBT-H.bcmap",
+      "status": 200,
+      "bytes": 7269,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "8afda745a505763f3ff54c8126eeb48ef376ea9ed07d9f42ff9a22c5c547ec57",
+      "expectedSha256": "8afda745a505763f3ff54c8126eeb48ef376ea9ed07d9f42ff9a22c5c547ec57",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBT-V.bcmap",
+      "status": 200,
+      "bytes": 176,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "cdc2ec5c3c7c7033290c9a8894878202f08674eb9b1ae7d36218430326768771",
+      "expectedSha256": "cdc2ec5c3c7c7033290c9a8894878202f08674eb9b1ae7d36218430326768771",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBTpc-EUC-H.bcmap",
+      "status": 200,
+      "bytes": 7298,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "7b23e2f7bfdb6c918f567b7324bf858f398bd8cd5f268d74ece19a3c91bf4f32",
+      "expectedSha256": "7b23e2f7bfdb6c918f567b7324bf858f398bd8cd5f268d74ece19a3c91bf4f32",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBTpc-EUC-V.bcmap",
+      "status": 200,
+      "bytes": 182,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "d7a1b13ead9ab511cf2cd01de6ce8b02aa8e8767e84895337d7a3b67f039f93b",
+      "expectedSha256": "d7a1b13ead9ab511cf2cd01de6ce8b02aa8e8767e84895337d7a3b67f039f93b",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBpc-EUC-H.bcmap",
+      "status": 200,
+      "bytes": 557,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "3c4a4eb82f05abe51f6650985c630e180438bfdd491318f5d20d2ec29236e1c3",
+      "expectedSha256": "3c4a4eb82f05abe51f6650985c630e180438bfdd491318f5d20d2ec29236e1c3",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/H.bcmap",
+      "status": 200,
+      "bytes": 553,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a0233e21047ec00b852125b243cbcf30abee511155b6d8159c24f944384bc9ee",
+      "expectedSha256": "a0233e21047ec00b852125b243cbcf30abee511155b6d8159c24f944384bc9ee",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/GBpc-EUC-V.bcmap",
+      "status": 200,
+      "bytes": 181,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "215bdfa2842705624b4cf4cd29b8e3c720f1e192365e0305c11030a424c84d7c",
+      "expectedSha256": "215bdfa2842705624b4cf4cd29b8e3c720f1e192365e0305c11030a424c84d7c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKdla-B5-H.bcmap",
+      "status": 200,
+      "bytes": 2654,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "5242bce18fb13ab4cc59b146a03eba36e4ce42667eeff09e10981a9d2aa4996b",
+      "expectedSha256": "5242bce18fb13ab4cc59b146a03eba36e4ce42667eeff09e10981a9d2aa4996b",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKdla-B5-V.bcmap",
+      "status": 200,
+      "bytes": 148,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "2e0537f786c0791d41a925f72bad2d4e7268aa6cbf15a1400a722672cec38e2c",
+      "expectedSha256": "2e0537f786c0791d41a925f72bad2d4e7268aa6cbf15a1400a722672cec38e2c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKdlb-B5-V.bcmap",
+      "status": 200,
+      "bytes": 148,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "b249eb9dcb915ab45057c5d4d7aa55ef88d0efbb092af6bae0b2d4705d139abf",
+      "expectedSha256": "b249eb9dcb915ab45057c5d4d7aa55ef88d0efbb092af6bae0b2d4705d139abf",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKdlb-B5-H.bcmap",
+      "status": 200,
+      "bytes": 2414,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "fdc8159984bf5dbe475c0d5dfcb621ecee4dea07c38c668bd77f4c679e23b9b3",
+      "expectedSha256": "fdc8159984bf5dbe475c0d5dfcb621ecee4dea07c38c668bd77f4c679e23b9b3",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKgccs-B5-H.bcmap",
+      "status": 200,
+      "bytes": 2292,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "ab64c7fc5e9b2e97750cc4f269b0da14fd8649e49151b7598c8df86599bac591",
+      "expectedSha256": "ab64c7fc5e9b2e97750cc4f269b0da14fd8649e49151b7598c8df86599bac591",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKgccs-B5-V.bcmap",
+      "status": 200,
+      "bytes": 149,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "02ebdf7cdffb5395fb21091cd58a013a18ae5388922822f9dc6292ef16b98956",
+      "expectedSha256": "02ebdf7cdffb5395fb21091cd58a013a18ae5388922822f9dc6292ef16b98956",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKm314-B5-H.bcmap",
+      "status": 200,
+      "bytes": 1772,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "bfd8bbde6b36a9da4c1c902c74121a30d9807a7079a00eeea218be6adc223cef",
+      "expectedSha256": "bfd8bbde6b36a9da4c1c902c74121a30d9807a7079a00eeea218be6adc223cef",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKm314-B5-V.bcmap",
+      "status": 200,
+      "bytes": 149,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "2a64a815cfb6fdd480674a868762e3d161fda17543b20c9209978559f0667164",
+      "expectedSha256": "2a64a815cfb6fdd480674a868762e3d161fda17543b20c9209978559f0667164",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKm471-B5-V.bcmap",
+      "status": 200,
+      "bytes": 149,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "be24c109e78aa4fe3c1f27d30aab3ed0741e783fa1b6b6c2719741072b54b132",
+      "expectedSha256": "be24c109e78aa4fe3c1f27d30aab3ed0741e783fa1b6b6c2719741072b54b132",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKm471-B5-H.bcmap",
+      "status": 200,
+      "bytes": 2171,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "49d7c037758826b5b6c0fa329c35bbf25d3943197754e72ecd30c6fb04d745e6",
+      "expectedSha256": "49d7c037758826b5b6c0fa329c35bbf25d3943197754e72ecd30c6fb04d745e6",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Hankaku.bcmap",
+      "status": 200,
+      "bytes": 132,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "b454701f7aecd7856769016dfd04ca64280a060f2c67a2466d50b4395d24974e",
+      "expectedSha256": "b454701f7aecd7856769016dfd04ca64280a060f2c67a2466d50b4395d24974e",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKscs-B5-H.bcmap",
+      "status": 200,
+      "bytes": 4437,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "08599378f41d96b40537adef6e6edcc4a787bc63f5accf47c026df4905a13914",
+      "expectedSha256": "08599378f41d96b40537adef6e6edcc4a787bc63f5accf47c026df4905a13914",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/HKscs-B5-V.bcmap",
+      "status": 200,
+      "bytes": 159,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "d073542b7dad1c4cbf01c1af5f0cd13218d1281a491956e310c55702fc8705c4",
+      "expectedSha256": "d073542b7dad1c4cbf01c1af5f0cd13218d1281a491956e310c55702fc8705c4",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Hiragana.bcmap",
+      "status": 200,
+      "bytes": 124,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "2ed669394756dd9458651cd9995ab29ab691ecb7686659003306cdf22767a414",
+      "expectedSha256": "2ed669394756dd9458651cd9995ab29ab691ecb7686659003306cdf22767a414",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSC-EUC-V.bcmap",
+      "status": 200,
+      "bytes": 164,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "fdb36bad85e9924823d49db374067988e024cf80fc894711f2c9178951cbbe95",
+      "expectedSha256": "fdb36bad85e9924823d49db374067988e024cf80fc894711f2c9178951cbbe95",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSC-H.bcmap",
+      "status": 200,
+      "bytes": 1831,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "c1f6d61f1d3304fd539a65ae72624fa567ecc3853bf52e283958a7a2515b3eee",
+      "expectedSha256": "c1f6d61f1d3304fd539a65ae72624fa567ecc3853bf52e283958a7a2515b3eee",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSC-EUC-H.bcmap",
+      "status": 200,
+      "bytes": 1848,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "6784e16dbc5861c036c23d3e55f0d4ba0975a3e464da0ee8e49bcfff0be070c4",
+      "expectedSha256": "6784e16dbc5861c036c23d3e55f0d4ba0975a3e464da0ee8e49bcfff0be070c4",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSC-Johab-H.bcmap",
+      "status": 200,
+      "bytes": 16791,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "939993d213f68db763bf156217c217ae23af082b91a0eacecf3d11eb4ff8ef8c",
+      "expectedSha256": "939993d213f68db763bf156217c217ae23af082b91a0eacecf3d11eb4ff8ef8c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSC-Johab-V.bcmap",
+      "status": 200,
+      "bytes": 166,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "5d61967aac0e666def721e8b8d0fed8f95a879a14f2e76ce516c3d11c621e519",
+      "expectedSha256": "5d61967aac0e666def721e8b8d0fed8f95a879a14f2e76ce516c3d11c621e519",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSC-V.bcmap",
+      "status": 200,
+      "bytes": 160,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "d7da5afd9f1fe74816d79c9325f0139a4efb6438664ebfdf9a7aa92f3034360f",
+      "expectedSha256": "d7da5afd9f1fe74816d79c9325f0139a4efb6438664ebfdf9a7aa92f3034360f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSCms-UHC-HW-H.bcmap",
+      "status": 200,
+      "bytes": 2789,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a5e6ba22aceb02fdedee11bfb9ed138463d89e85b87810b9f075b469d936f8ec",
+      "expectedSha256": "a5e6ba22aceb02fdedee11bfb9ed138463d89e85b87810b9f075b469d936f8ec",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSCms-UHC-H.bcmap",
+      "status": 200,
+      "bytes": 2787,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "5b70d8f6a4fa9e2283dc649f0ff95d906d56efbee50a20e8d2faec3a8fed078e",
+      "expectedSha256": "5b70d8f6a4fa9e2283dc649f0ff95d906d56efbee50a20e8d2faec3a8fed078e",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSCms-UHC-HW-V.bcmap",
+      "status": 200,
+      "bytes": 169,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "890332a6a26880d463a12f2a6ff048bf9cf7e45077cfb1ca8815b89baa7bf411",
+      "expectedSha256": "890332a6a26880d463a12f2a6ff048bf9cf7e45077cfb1ca8815b89baa7bf411",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSCms-UHC-V.bcmap",
+      "status": 200,
+      "bytes": 166,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "1631b531c9a40c8cbe24c2317dba107362e49fa6e18af620414d627c111d570c",
+      "expectedSha256": "1631b531c9a40c8cbe24c2317dba107362e49fa6e18af620414d627c111d570c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSCpc-EUC-H.bcmap",
+      "status": 200,
+      "bytes": 2024,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "709480682c55cedbb0124b9960d78e28febeee0df2e34607d61aac6601647ec7",
+      "expectedSha256": "709480682c55cedbb0124b9960d78e28febeee0df2e34607d61aac6601647ec7",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Katakana.bcmap",
+      "status": 200,
+      "bytes": 100,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "3b6ca6642fbf8822da00d5e58a8aa275216d5c32dbf2bd73e934197fc9fc5c53",
+      "expectedSha256": "3b6ca6642fbf8822da00d5e58a8aa275216d5c32dbf2bd73e934197fc9fc5c53",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/KSCpc-EUC-V.bcmap",
+      "status": 200,
+      "bytes": 166,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "031707887d6fc2378a36cdb6775334fd7a236c3f95048d8436abf43fe26fc49d",
+      "expectedSha256": "031707887d6fc2378a36cdb6775334fd7a236c3f95048d8436abf43fe26fc49d",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/LICENSE",
+      "status": 200,
+      "bytes": 2080,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "aa92ab5a472974865a96fd4a4e9c13bb41bf6fe1b309cb6b8da48bc9e19839a2",
+      "expectedSha256": "aa92ab5a472974865a96fd4a4e9c13bb41bf6fe1b309cb6b8da48bc9e19839a2",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/NWP-H.bcmap",
+      "status": 200,
+      "bytes": 2765,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "286c6c9e335da330928a01edc3c97a3a623f1f7f3c42762b0a7dc2f651b1a78f",
+      "expectedSha256": "286c6c9e335da330928a01edc3c97a3a623f1f7f3c42762b0a7dc2f651b1a78f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/NWP-V.bcmap",
+      "status": 200,
+      "bytes": 252,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "3a75fb7b59adfb172710758c425d8ac6c93fd5360a64dd4afd5dd04e60ab4b4d",
+      "expectedSha256": "3a75fb7b59adfb172710758c425d8ac6c93fd5360a64dd4afd5dd04e60ab4b4d",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/RKSJ-H.bcmap",
+      "status": 200,
+      "bytes": 534,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a70de61a22a898f693f02cc011c3e3cff2e10aaa7cddb4661e456a21ae859f78",
+      "expectedSha256": "a70de61a22a898f693f02cc011c3e3cff2e10aaa7cddb4661e456a21ae859f78",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/RKSJ-V.bcmap",
+      "status": 200,
+      "bytes": 170,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "68c1a64506471a524ea5cfc3b3a9f8f70031989a6bd95427b1351f33ccf50b06",
+      "expectedSha256": "68c1a64506471a524ea5cfc3b3a9f8f70031989a6bd95427b1351f33ccf50b06",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/Roman.bcmap",
+      "status": 200,
+      "bytes": 96,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "1c6b3ef9d9e5cb1aa329142ce9414b90f9b6d7f9182a2a9e927378dab8f0d43f",
+      "expectedSha256": "1c6b3ef9d9e5cb1aa329142ce9414b90f9b6d7f9182a2a9e927378dab8f0d43f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniCNS-UCS2-V.bcmap",
+      "status": 200,
+      "bytes": 156,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "1e5cc184b850ea44abc2df8ae5674279df668e8edf5e2a1a2ea2bd77adbd280f",
+      "expectedSha256": "1e5cc184b850ea44abc2df8ae5674279df668e8edf5e2a1a2ea2bd77adbd280f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniCNS-UCS2-H.bcmap",
+      "status": 200,
+      "bytes": 48280,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "779428116752f34e2490a1941d24e4634c71e3c22d053b811d2090ae2fb3c704",
+      "expectedSha256": "779428116752f34e2490a1941d24e4634c71e3c22d053b811d2090ae2fb3c704",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniCNS-UTF16-V.bcmap",
+      "status": 200,
+      "bytes": 156,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "278eb1e68d1a236c60ef59472cf0176ee0d45f364285e76ca12419a08d46fb9a",
+      "expectedSha256": "278eb1e68d1a236c60ef59472cf0176ee0d45f364285e76ca12419a08d46fb9a",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniCNS-UTF16-H.bcmap",
+      "status": 200,
+      "bytes": 50419,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "32ff139b3c7b91d6ad25f994701f3ce7b242906022c418fd73e6493fc228bfe5",
+      "expectedSha256": "32ff139b3c7b91d6ad25f994701f3ce7b242906022c418fd73e6493fc228bfe5",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniCNS-UTF32-V.bcmap",
+      "status": 200,
+      "bytes": 160,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "f7da3caf83ceb1cb37936fa10700d9ba6e9c3f72c5bc9724e3ac79bff0c0179e",
+      "expectedSha256": "f7da3caf83ceb1cb37936fa10700d9ba6e9c3f72c5bc9724e3ac79bff0c0179e",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniCNS-UTF32-H.bcmap",
+      "status": 200,
+      "bytes": 52679,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "bf26eb67fe19ee5ba915799e80ca72408400aa8342fdf6a244a4f44de8f97336",
+      "expectedSha256": "bf26eb67fe19ee5ba915799e80ca72408400aa8342fdf6a244a4f44de8f97336",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniCNS-UTF8-H.bcmap",
+      "status": 200,
+      "bytes": 53629,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "2f2a742bcd1a84a148a4a518b9eed51a8f9c6ca5ed3bc5e2e41fff97de5dc2d8",
+      "expectedSha256": "2f2a742bcd1a84a148a4a518b9eed51a8f9c6ca5ed3bc5e2e41fff97de5dc2d8",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniCNS-UTF8-V.bcmap",
+      "status": 200,
+      "bytes": 157,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "b7c3f10780a8c62dd1c8ff6c30dc1e4e23b6cdc87c3a96fcd514cc98ffd3af9d",
+      "expectedSha256": "b7c3f10780a8c62dd1c8ff6c30dc1e4e23b6cdc87c3a96fcd514cc98ffd3af9d",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniGB-UCS2-V.bcmap",
+      "status": 200,
+      "bytes": 193,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "f10282335e4d64203bc2a653a3a47d745ec76c8ae04549f4d50180c1899be216",
+      "expectedSha256": "f10282335e4d64203bc2a653a3a47d745ec76c8ae04549f4d50180c1899be216",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniGB-UCS2-H.bcmap",
+      "status": 200,
+      "bytes": 43366,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "9201569b402e81ad8860650bd86350c4fa28e5dd5971f05fcacaf40f51de18ed",
+      "expectedSha256": "9201569b402e81ad8860650bd86350c4fa28e5dd5971f05fcacaf40f51de18ed",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniGB-UTF16-V.bcmap",
+      "status": 200,
+      "bytes": 178,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "0473cfbba612b92dd9918f0ff8aee9112897c48e0ffdc0eb82da3144ed8ea84a",
+      "expectedSha256": "0473cfbba612b92dd9918f0ff8aee9112897c48e0ffdc0eb82da3144ed8ea84a",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniGB-UTF16-H.bcmap",
+      "status": 200,
+      "bytes": 44086,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "386fd39581245c034da016a92d23f3df1117d169f996100050b264fc09a84e35",
+      "expectedSha256": "386fd39581245c034da016a92d23f3df1117d169f996100050b264fc09a84e35",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniGB-UTF32-V.bcmap",
+      "status": 200,
+      "bytes": 182,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "106acc49b7118bdef944e32107b4f348238f3929a0a15d3b7aab7b9101535993",
+      "expectedSha256": "106acc49b7118bdef944e32107b4f348238f3929a0a15d3b7aab7b9101535993",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniGB-UTF8-V.bcmap",
+      "status": 200,
+      "bytes": 181,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a64df947632878eacc532fa193c735c92a383b7d66e6f8374ac193af7c64fc63",
+      "expectedSha256": "a64df947632878eacc532fa193c735c92a383b7d66e6f8374ac193af7c64fc63",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniGB-UTF32-H.bcmap",
+      "status": 200,
+      "bytes": 45738,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "f48a145dc4e3ed1dca1dde7111716a72306a2a4191ab05c6bae3a5c3a961cd2f",
+      "expectedSha256": "f48a145dc4e3ed1dca1dde7111716a72306a2a4191ab05c6bae3a5c3a961cd2f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniGB-UTF8-H.bcmap",
+      "status": 200,
+      "bytes": 46837,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "f217b439c80ee5fa1bc2cf6d1defcc319f8d84483d166a00ee199e05a68588df",
+      "expectedSha256": "f217b439c80ee5fa1bc2cf6d1defcc319f8d84483d166a00ee199e05a68588df",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS-UCS2-HW-H.bcmap",
+      "status": 200,
+      "bytes": 119,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "16e87edca954177c0881c874859d6783220925d821b5cdfb8755b61ebd93f9ce",
+      "expectedSha256": "16e87edca954177c0881c874859d6783220925d821b5cdfb8755b61ebd93f9ce",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS-UCS2-H.bcmap",
+      "status": 200,
+      "bytes": 25439,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "ad2352f40870880fbf7f8ee5abadff743fbd025fbf9830b8ada472d1c5e4da0b",
+      "expectedSha256": "ad2352f40870880fbf7f8ee5abadff743fbd025fbf9830b8ada472d1c5e4da0b",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS-UCS2-HW-V.bcmap",
+      "status": 200,
+      "bytes": 680,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "1973457e2c0192819947e56068625b34fb9a72ecc8a476ce6d7eaae5f73e2e5c",
+      "expectedSha256": "1973457e2c0192819947e56068625b34fb9a72ecc8a476ce6d7eaae5f73e2e5c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS-UCS2-V.bcmap",
+      "status": 200,
+      "bytes": 664,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "42a133d8e2ce9dd6d2288018e01592d2bf2435b326d39b94ea0b6e6a44ac33d3",
+      "expectedSha256": "42a133d8e2ce9dd6d2288018e01592d2bf2435b326d39b94ea0b6e6a44ac33d3",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS-UTF16-H.bcmap",
+      "status": 200,
+      "bytes": 39443,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "f6a89c5688978548c83fcee990e205bc63c74274d5c69b49032a3bd4c49a05ee",
+      "expectedSha256": "f6a89c5688978548c83fcee990e205bc63c74274d5c69b49032a3bd4c49a05ee",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS-UTF16-V.bcmap",
+      "status": 200,
+      "bytes": 643,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "c67126fc7c73850855186bb0d6482ac0a365057e0b58778c4ab9f234683fef53",
+      "expectedSha256": "c67126fc7c73850855186bb0d6482ac0a365057e0b58778c4ab9f234683fef53",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS-UTF32-V.bcmap",
+      "status": 200,
+      "bytes": 677,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "ed4dafda402bdd19c4d5d8bf2ab41473c0f86f384552b4c7b963d6627daedeb1",
+      "expectedSha256": "ed4dafda402bdd19c4d5d8bf2ab41473c0f86f384552b4c7b963d6627daedeb1",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS-UTF32-H.bcmap",
+      "status": 200,
+      "bytes": 40539,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "96195950ce0fe24443d8eb426fa6b88534ec421d7bef9046f0b2362809cfba73",
+      "expectedSha256": "96195950ce0fe24443d8eb426fa6b88534ec421d7bef9046f0b2362809cfba73",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS-UTF8-V.bcmap",
+      "status": 200,
+      "bytes": 678,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "1021611424f913b2df0bfdbe94bd327c04e224ec89d8e821c6501ea3d21f4265",
+      "expectedSha256": "1021611424f913b2df0bfdbe94bd327c04e224ec89d8e821c6501ea3d21f4265",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS2004-UTF16-V.bcmap",
+      "status": 200,
+      "bytes": 647,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "3b149aff5c5707b57fb3215d1775852c8b1f413ec0f679ea628f25cf87fe098d",
+      "expectedSha256": "3b149aff5c5707b57fb3215d1775852c8b1f413ec0f679ea628f25cf87fe098d",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS-UTF8-H.bcmap",
+      "status": 200,
+      "bytes": 41695,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "798fb0bf06ab0788d1f6a91c2db7de581612eef03c628f10e8f7ecd8f70ab448",
+      "expectedSha256": "798fb0bf06ab0788d1f6a91c2db7de581612eef03c628f10e8f7ecd8f70ab448",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS2004-UTF32-V.bcmap",
+      "status": 200,
+      "bytes": 681,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "6dd475782f2897648a683c48b2fa015a15b8f06856760bddc8a17a63f418bacb",
+      "expectedSha256": "6dd475782f2897648a683c48b2fa015a15b8f06856760bddc8a17a63f418bacb",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS2004-UTF16-H.bcmap",
+      "status": 200,
+      "bytes": 39534,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "710a32d7cb43fd6bd9dbf30da5971f8c941590f74441e208d852c2be0e74cc97",
+      "expectedSha256": "710a32d7cb43fd6bd9dbf30da5971f8c941590f74441e208d852c2be0e74cc97",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS2004-UTF32-H.bcmap",
+      "status": 200,
+      "bytes": 40630,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "8d2658e18741af7937d586a57c89729a6fec0d86121197c1f8518aa58b29cdfb",
+      "expectedSha256": "8d2658e18741af7937d586a57c89729a6fec0d86121197c1f8518aa58b29cdfb",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS2004-UTF8-V.bcmap",
+      "status": 200,
+      "bytes": 682,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "40a8c7ea2d46711c5f78fc9a878a7db68b1543ba5cd60ecf14f519a2deb829b7",
+      "expectedSha256": "40a8c7ea2d46711c5f78fc9a878a7db68b1543ba5cd60ecf14f519a2deb829b7",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJIS2004-UTF8-H.bcmap",
+      "status": 200,
+      "bytes": 41779,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "691c614ce432b3e62486efb54e5c84c6da5afe9b51b21253bde4758feb484183",
+      "expectedSha256": "691c614ce432b3e62486efb54e5c84c6da5afe9b51b21253bde4758feb484183",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJISPro-UCS2-HW-V.bcmap",
+      "status": 200,
+      "bytes": 705,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "6826f94d789d7bf1960668c1c5819c34c9585c1b23152fbc19ee81c7df08524b",
+      "expectedSha256": "6826f94d789d7bf1960668c1c5819c34c9585c1b23152fbc19ee81c7df08524b",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJISPro-UCS2-V.bcmap",
+      "status": 200,
+      "bytes": 689,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "493de9fd1a08f7946065d8ab58f0c3c9fe489f5a0f109f2d05a3169b4bd5789f",
+      "expectedSha256": "493de9fd1a08f7946065d8ab58f0c3c9fe489f5a0f109f2d05a3169b4bd5789f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJISPro-UTF8-V.bcmap",
+      "status": 200,
+      "bytes": 726,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "6181d382cf736c5e09492e8be9f26f31fa25b7462253f23ab16646af432cad81",
+      "expectedSha256": "6181d382cf736c5e09492e8be9f26f31fa25b7462253f23ab16646af432cad81",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJISX0213-UTF32-H.bcmap",
+      "status": 200,
+      "bytes": 40517,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "692044e1fb33445668632bc9fe7386805c624864be1ddeb29d65bb0c99fc630c",
+      "expectedSha256": "692044e1fb33445668632bc9fe7386805c624864be1ddeb29d65bb0c99fc630c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJISX0213-UTF32-V.bcmap",
+      "status": 200,
+      "bytes": 684,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "dd54e16ca7bffb3a886242549b2bf7d78a277087f7c60d2636f118c21a5b0646",
+      "expectedSha256": "dd54e16ca7bffb3a886242549b2bf7d78a277087f7c60d2636f118c21a5b0646",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJISX02132004-UTF32-V.bcmap",
+      "status": 200,
+      "bytes": 688,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "94c22bd99e771c5fbe0dd8dc39850570d4db0075074aca13e272813edd7cc57f",
+      "expectedSha256": "94c22bd99e771c5fbe0dd8dc39850570d4db0075074aca13e272813edd7cc57f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniJISX02132004-UTF32-H.bcmap",
+      "status": 200,
+      "bytes": 40608,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "f80ea5a989be30ccda5a8804baef6d3b4b044d2b339bf8b31c671b2466171cf6",
+      "expectedSha256": "f80ea5a989be30ccda5a8804baef6d3b4b044d2b339bf8b31c671b2466171cf6",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniKS-UCS2-H.bcmap",
+      "status": 200,
+      "bytes": 25783,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "a1081396ab4adb6f4a5b6c15f896963c244c1c9bcb65ce5616d06096a1b9811c",
+      "expectedSha256": "a1081396ab4adb6f4a5b6c15f896963c244c1c9bcb65ce5616d06096a1b9811c",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniKS-UCS2-V.bcmap",
+      "status": 200,
+      "bytes": 178,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "6cab547431958fbdc1d401d06ebd4dd61a73f5509a10f974df32bcbca11a2e43",
+      "expectedSha256": "6cab547431958fbdc1d401d06ebd4dd61a73f5509a10f974df32bcbca11a2e43",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniKS-UTF16-H.bcmap",
+      "status": 200,
+      "bytes": 26327,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "42d35b396286499dfae1737a07adb3a64500df37b426580bfb1d3ea872938519",
+      "expectedSha256": "42d35b396286499dfae1737a07adb3a64500df37b426580bfb1d3ea872938519",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniKS-UTF16-V.bcmap",
+      "status": 200,
+      "bytes": 164,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "5bdb7390c80dcc136cb47d41dc7460082560969c17322ee739fe3020fb642410",
+      "expectedSha256": "5bdb7390c80dcc136cb47d41dc7460082560969c17322ee739fe3020fb642410",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniKS-UTF32-V.bcmap",
+      "status": 200,
+      "bytes": 168,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "dfda895eceaed081af030dbbb962b49629eea817fc3c02bae15db93d0c68acd7",
+      "expectedSha256": "dfda895eceaed081af030dbbb962b49629eea817fc3c02bae15db93d0c68acd7",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniKS-UTF8-V.bcmap",
+      "status": 200,
+      "bytes": 169,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "9ecc6cf30dd354b9778ddba163b6cc7302b087ce9f39d1ba73472d2b75ed13ca",
+      "expectedSha256": "9ecc6cf30dd354b9778ddba163b6cc7302b087ce9f39d1ba73472d2b75ed13ca",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniKS-UTF8-H.bcmap",
+      "status": 200,
+      "bytes": 27790,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "3fac9c65145f72d7d42157a3b9c5ed6904632184e6a0888f2b828699afd2002f",
+      "expectedSha256": "3fac9c65145f72d7d42157a3b9c5ed6904632184e6a0888f2b828699afd2002f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/UniKS-UTF32-H.bcmap",
+      "status": 200,
+      "bytes": 26451,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "3a01ec51ed1b828101351e337ffb8250abe11880032e5210f881170fed2588de",
+      "expectedSha256": "3a01ec51ed1b828101351e337ffb8250abe11880032e5210f881170fed2588de",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/V.bcmap",
+      "status": 200,
+      "bytes": 166,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "b9ad1c0c09ff14bca52f9a28a9767eb857ad0e8946e64ba14c7387a7eb69866a",
+      "expectedSha256": "b9ad1c0c09ff14bca52f9a28a9767eb857ad0e8946e64ba14c7387a7eb69866a",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/cmaps/WP-Symbol.bcmap",
+      "status": 200,
+      "bytes": 179,
+      "contentType": "application/octet-stream",
+      "contentEncoding": null,
+      "sha256": "543923bead225732aba30976690ee89095a19628277b5863efecc2c728d5d7bf",
+      "expectedSha256": "543923bead225732aba30976690ee89095a19628277b5863efecc2c728d5d7bf",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/iccs/CGATS001Compat-v2-micro.icc",
+      "status": 200,
+      "bytes": 8464,
+      "contentType": "application/vnd.iccprofile",
+      "contentEncoding": "br",
+      "sha256": "73e1ba37d2bad5bab2a964f40a9eed96209666efc067c3322626214bbef234a0",
+      "expectedSha256": "73e1ba37d2bad5bab2a964f40a9eed96209666efc067c3322626214bbef234a0",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/iccs/LICENSE",
+      "status": 200,
+      "bytes": 6553,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "286e4fd7b447330b2c88e23890e3cd0a9d38cb398d4a59cb247f578ccbda3213",
+      "expectedSha256": "286e4fd7b447330b2c88e23890e3cd0a9d38cb398d4a59cb247f578ccbda3213",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/FoxitFixed.pfb",
+      "status": 200,
+      "bytes": 17597,
+      "contentType": "application/x-font-type1",
+      "contentEncoding": "br",
+      "sha256": "b6c8fe53f134b8b6d4578cd2d544df4cee9624c4efa8d51a560fb40ea296101b",
+      "expectedSha256": "b6c8fe53f134b8b6d4578cd2d544df4cee9624c4efa8d51a560fb40ea296101b",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/FoxitFixedBold.pfb",
+      "status": 200,
+      "bytes": 18055,
+      "contentType": "application/x-font-type1",
+      "contentEncoding": "br",
+      "sha256": "f1b7159702973f54fc86254ea38bcf3712b2a736eb3a0995751e9f4bb45ad603",
+      "expectedSha256": "f1b7159702973f54fc86254ea38bcf3712b2a736eb3a0995751e9f4bb45ad603",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/FoxitDingbats.pfb",
+      "status": 200,
+      "bytes": 29513,
+      "contentType": "application/x-font-type1",
+      "contentEncoding": "br",
+      "sha256": "845c752392b6c914fb989c75a08b7792b88f542d2499042ef2889f8c814a16ed",
+      "expectedSha256": "845c752392b6c914fb989c75a08b7792b88f542d2499042ef2889f8c814a16ed",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/FoxitFixedBoldItalic.pfb",
+      "status": 200,
+      "bytes": 19151,
+      "contentType": "application/x-font-type1",
+      "contentEncoding": "br",
+      "sha256": "8a000945843bd31add06aee63bf9fd41b7578b4f3242a4b7cd46349ad9d24d4d",
+      "expectedSha256": "8a000945843bd31add06aee63bf9fd41b7578b4f3242a4b7cd46349ad9d24d4d",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/FoxitFixedItalic.pfb",
+      "status": 200,
+      "bytes": 18746,
+      "contentType": "application/x-font-type1",
+      "contentEncoding": "br",
+      "sha256": "5007faf8320fa1fcc08b8894b356ad976f60b992ba29ee5272578bbdebaf3876",
+      "expectedSha256": "5007faf8320fa1fcc08b8894b356ad976f60b992ba29ee5272578bbdebaf3876",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/FoxitSerifBold.pfb",
+      "status": 200,
+      "bytes": 19395,
+      "contentType": "application/x-font-type1",
+      "contentEncoding": "br",
+      "sha256": "0bdf4b04e964139818d51eda03d566ba999fc3ba2421b1c6c51f9dc969022e80",
+      "expectedSha256": "0bdf4b04e964139818d51eda03d566ba999fc3ba2421b1c6c51f9dc969022e80",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/FoxitSerif.pfb",
+      "status": 200,
+      "bytes": 19469,
+      "contentType": "application/x-font-type1",
+      "contentEncoding": "br",
+      "sha256": "4f57d2b9d884af8f907bf22df6019b52d86cbf6214fdbd02b1ae05472a543f35",
+      "expectedSha256": "4f57d2b9d884af8f907bf22df6019b52d86cbf6214fdbd02b1ae05472a543f35",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/FoxitSerifBoldItalic.pfb",
+      "status": 200,
+      "bytes": 20733,
+      "contentType": "application/x-font-type1",
+      "contentEncoding": "br",
+      "sha256": "a406cac82583bf98175cb62c87ed5e95c45fbb34eece63a10b0a13e793cb2e10",
+      "expectedSha256": "a406cac82583bf98175cb62c87ed5e95c45fbb34eece63a10b0a13e793cb2e10",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/FoxitSerifItalic.pfb",
+      "status": 200,
+      "bytes": 21227,
+      "contentType": "application/x-font-type1",
+      "contentEncoding": "br",
+      "sha256": "610ae0687198045c4db5d1a6650fd5e92536631706382eb8b72e38df578d0ae9",
+      "expectedSha256": "610ae0687198045c4db5d1a6650fd5e92536631706382eb8b72e38df578d0ae9",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/LICENSE_FOXIT",
+      "status": 200,
+      "bytes": 1553,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7",
+      "expectedSha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/LICENSE_LIBERATION",
+      "status": 200,
+      "bytes": 22154,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "d2c4d5b3e115a519cb58eb691aa64538397e2611f9ebe801392cf9667997e7dc",
+      "expectedSha256": "d2c4d5b3e115a519cb58eb691aa64538397e2611f9ebe801392cf9667997e7dc",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/FoxitSymbol.pfb",
+      "status": 200,
+      "bytes": 16729,
+      "contentType": "application/x-font-type1",
+      "contentEncoding": "br",
+      "sha256": "47967d055530e7357088a08403115425643ec2cdfd6201ba8af0fbd7116c1539",
+      "expectedSha256": "47967d055530e7357088a08403115425643ec2cdfd6201ba8af0fbd7116c1539",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/LiberationSans-BoldItalic.ttf",
+      "status": 200,
+      "bytes": 135124,
+      "contentType": "font/ttf",
+      "contentEncoding": "br",
+      "sha256": "a224075ac17495ad0a3af3bc0a419ac0704a8b3fd1095456201fb9b095fc281d",
+      "expectedSha256": "a224075ac17495ad0a3af3bc0a419ac0704a8b3fd1095456201fb9b095fc281d",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/LiberationSans-Regular.ttf",
+      "status": 200,
+      "bytes": 139512,
+      "contentType": "font/ttf",
+      "contentEncoding": "br",
+      "sha256": "f8ace1f892b2bd9dc1792ba7f097fa7588f84fed48321480e04de5390828221f",
+      "expectedSha256": "f8ace1f892b2bd9dc1792ba7f097fa7588f84fed48321480e04de5390828221f",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/LiberationSans-Italic.ttf",
+      "status": 200,
+      "bytes": 162036,
+      "contentType": "font/ttf",
+      "contentEncoding": "br",
+      "sha256": "832b4406dbef23628800d3aaad21048534ac84d7e3ad955be83b8172ed8ef512",
+      "expectedSha256": "832b4406dbef23628800d3aaad21048534ac84d7e3ad955be83b8172ed8ef512",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/standard_fonts/LiberationSans-Bold.ttf",
+      "status": 200,
+      "bytes": 137052,
+      "contentType": "font/ttf",
+      "contentEncoding": "br",
+      "sha256": "361c61b82d575c5c35fd9157fda8b0194bcfcd0d88ea8521a4fb5dd53d33dddc",
+      "expectedSha256": "361c61b82d575c5c35fd9157fda8b0194bcfcd0d88ea8521a4fb5dd53d33dddc",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/LICENSE_JBIG2",
+      "status": 200,
+      "bytes": 12862,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "9e66b7f1b934a28b37f3bc4dac97915de1674271e79a0a88182a18ed9731b4d1",
+      "expectedSha256": "9e66b7f1b934a28b37f3bc4dac97915de1674271e79a0a88182a18ed9731b4d1",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/LICENSE_PDFJS_JBIG2",
+      "status": 200,
+      "bytes": 555,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": null,
+      "sha256": "aad3cce09842e00e9e11ad5e8fef8cc02fbc3a3768fe2f007443b9cee37aaee5",
+      "expectedSha256": "aad3cce09842e00e9e11ad5e8fef8cc02fbc3a3768fe2f007443b9cee37aaee5",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/LICENSE_OPENJPEG",
+      "status": 200,
+      "bytes": 2112,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "a6af136f3e15038a666b61f376612a07d9a4e48cb7c01adbf3e33b3f14ab49b6",
+      "expectedSha256": "a6af136f3e15038a666b61f376612a07d9a4e48cb7c01adbf3e33b3f14ab49b6",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/LICENSE_PDFJS_OPENJPEG",
+      "status": 200,
+      "bytes": 1285,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "717fc62da03292dbb4dd0c8280bd4ce7bb8550dcf31d772bc93455fb50313425",
+      "expectedSha256": "717fc62da03292dbb4dd0c8280bd4ce7bb8550dcf31d772bc93455fb50313425",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/LICENSE_PDFJS_QCMS",
+      "status": 200,
+      "bytes": 1036,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1",
+      "expectedSha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/LICENSE_QCMS",
+      "status": 200,
+      "bytes": 1121,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "36d847ae882f6574ebc72f56a4f354e4f104fde4a584373496482e97d52d31bc",
+      "expectedSha256": "36d847ae882f6574ebc72f56a4f354e4f104fde4a584373496482e97d52d31bc",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/LICENSE_PDFJS_QUICKJS",
+      "status": 200,
+      "bytes": 1075,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "7fdaed3d938f3dfce7189db07e74773c23789143a55db81a95d09dcbfda267b0",
+      "expectedSha256": "7fdaed3d938f3dfce7189db07e74773c23789143a55db81a95d09dcbfda267b0",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/LICENSE_QUICKJS",
+      "status": 200,
+      "bytes": 1130,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "598fd7fc928e4350abce36e337ba5a1346923c5c692f5be92c3d8e29ddd7c18d",
+      "expectedSha256": "598fd7fc928e4350abce36e337ba5a1346923c5c692f5be92c3d8e29ddd7c18d",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/jbig2.wasm",
+      "status": 200,
+      "bytes": 103671,
+      "contentType": "application/wasm",
+      "contentEncoding": "br",
+      "sha256": "466f45c2a61a698152fb5400c27e56ff2ceb73dcb71fde3fc366a502308eaab0",
+      "expectedSha256": "466f45c2a61a698152fb5400c27e56ff2ceb73dcb71fde3fc366a502308eaab0",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/openjpeg.wasm",
+      "status": 200,
+      "bytes": 220817,
+      "contentType": "application/wasm",
+      "contentEncoding": "br",
+      "sha256": "7ea4b2b04613370ad4e9c1162da750cc88b4b176eac0d0c164b3caff23fc0a46",
+      "expectedSha256": "7ea4b2b04613370ad4e9c1162da750cc88b4b176eac0d0c164b3caff23fc0a46",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/jbig2_nowasm_fallback.js",
+      "status": 200,
+      "bytes": 132439,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "70150223396487e1ccfef7eac61fc780074ad7fcc9e843b702a8a3bc23107494",
+      "expectedSha256": "70150223396487e1ccfef7eac61fc780074ad7fcc9e843b702a8a3bc23107494",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/qcms_bg.wasm",
+      "status": 200,
+      "bytes": 96589,
+      "contentType": "application/wasm",
+      "contentEncoding": "br",
+      "sha256": "663d86126d5f5fcb1c61490f94353e2a8375660b8c5498ab3ebab5a34b08800e",
+      "expectedSha256": "663d86126d5f5fcb1c61490f94353e2a8375660b8c5498ab3ebab5a34b08800e",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/quickjs-eval.js",
+      "status": 200,
+      "bytes": 6232,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "fe7930418e869791ce892567dbd0bc4698152b7e550b5cefa553992c56ddc325",
+      "expectedSha256": "fe7930418e869791ce892567dbd0bc4698152b7e550b5cefa553992c56ddc325",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/openjpeg_nowasm_fallback.js",
+      "status": 200,
+      "bytes": 338458,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "2855f1590e7fd7abbbf204cd13a5c09d30c92fe2c9313fb72b64aa763fe8b4f3",
+      "expectedSha256": "2855f1590e7fd7abbbf204cd13a5c09d30c92fe2c9313fb72b64aa763fe8b4f3",
+      "match": true
+    },
+    {
+      "path": "tessdata/LICENSE",
+      "status": 200,
+      "bytes": 11358,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "expectedSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "match": true
+    },
+    {
+      "path": "tesseract.js-5.1.1/LICENSE.md",
+      "status": 200,
+      "bytes": 11357,
+      "contentType": "text/markdown; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "expectedSha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "match": true
+    },
+    {
+      "path": "pdfjs-dist-6.5.438/wasm/quickjs-eval.wasm",
+      "status": 200,
+      "bytes": 469105,
+      "contentType": "application/wasm",
+      "contentEncoding": "br",
+      "sha256": "7bcacc9f22cacf7e9b23866d2a6d1639693d40c7f144e41b7c69ed37ba9cbe8f",
+      "expectedSha256": "7bcacc9f22cacf7e9b23866d2a6d1639693d40c7f144e41b7c69ed37ba9cbe8f",
+      "match": true
+    },
+    {
+      "path": "tesseract.js-5.1.1/dist/tesseract.min.js",
+      "status": 200,
+      "bytes": 66695,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "a8e29918d098b2b06e1012bdaeffb4aec0445c5d5654709023e0bd1f442a80e8",
+      "expectedSha256": "a8e29918d098b2b06e1012bdaeffb4aec0445c5d5654709023e0bd1f442a80e8",
+      "match": true
+    },
+    {
+      "path": "tesseract.js-5.1.1/dist/worker.min.js",
+      "status": 200,
+      "bytes": 123724,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "aca1229639fc9907d86f96e825955a2b7c5716d17f3bc3acd71f9c7ab66181fc",
+      "expectedSha256": "aca1229639fc9907d86f96e825955a2b7c5716d17f3bc3acd71f9c7ab66181fc",
+      "match": true
+    },
+    {
+      "path": "tesseract.js-core-5.1.1/LICENSE",
+      "status": 200,
+      "bytes": 11358,
+      "contentType": "text/plain; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+      "expectedSha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+      "match": true
+    },
+    {
+      "path": "tesseract.js-core-5.1.1/tesseract-core-simd-lstm.wasm",
+      "status": 200,
+      "bytes": 2859709,
+      "contentType": "application/wasm",
+      "contentEncoding": "br",
+      "sha256": "66b601224a0c4a8977bc9d92dd39841189f9ca22cc4122fcd7208cdb0961eeef",
+      "expectedSha256": "66b601224a0c4a8977bc9d92dd39841189f9ca22cc4122fcd7208cdb0961eeef",
+      "match": true
+    },
+    {
+      "path": "tesseract.js-core-5.1.1/tesseract-core-lstm.wasm",
+      "status": 200,
+      "bytes": 2859424,
+      "contentType": "application/wasm",
+      "contentEncoding": "br",
+      "sha256": "5db58ea4d1bd4256be81e8ae3b4fa226c4625dfba1850b1b3308dbf3700e9929",
+      "expectedSha256": "5db58ea4d1bd4256be81e8ae3b4fa226c4625dfba1850b1b3308dbf3700e9929",
+      "match": true
+    },
+    {
+      "path": "tesseract.js-core-5.1.1/tesseract-core-lstm.wasm.js",
+      "status": 200,
+      "bytes": 3938277,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "8f04aa0cc81e7bde33f80e92fa01a7a665f0b4884d098acf5de9c7104a11dfaa",
+      "expectedSha256": "8f04aa0cc81e7bde33f80e92fa01a7a665f0b4884d098acf5de9c7104a11dfaa",
+      "match": true
+    },
+    {
+      "path": "tesseract.js-core-5.1.1/tesseract-core-simd-lstm.wasm.js",
+      "status": 200,
+      "bytes": 3938657,
+      "contentType": "application/javascript; charset=UTF-8",
+      "contentEncoding": "br",
+      "sha256": "ce20eda9533cbed1e6c2b4276fbae1e0adc61b6754b5513084be601787b457cf",
+      "expectedSha256": "ce20eda9533cbed1e6c2b4276fbae1e0adc61b6754b5513084be601787b457cf",
+      "match": true
+    },
+    {
+      "path": "tessdata/eng.traineddata.gz",
+      "status": 200,
+      "bytes": 10923060,
+      "contentType": "application/gzip",
+      "contentEncoding": null,
+      "sha256": "ed350f3752f81ee8f38769edc14d92d997dababe23b565c59879372cc46a2468",
+      "expectedSha256": "ed350f3752f81ee8f38769edc14d92d997dababe23b565c59879372cc46a2468",
+      "match": true
+    }
+  ],
+  "publicDevelopmentFiles": [
+    {
+      "path": "/package.json",
+      "status": 200,
+      "contentType": "application/json",
+      "exposed": true,
+      "htmlFallback": false
+    },
+    {
+      "path": "/security/vapt-checks.cjs",
+      "status": 200,
+      "contentType": "application/octet-stream",
+      "exposed": true,
+      "htmlFallback": false
+    },
+    {
+      "path": "/VAPT_REPORT.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=UTF-8",
+      "exposed": true,
+      "htmlFallback": false
+    },
+    {
+      "path": "/.git/HEAD",
+      "status": 404,
+      "contentType": "text/html; charset=utf-8",
+      "exposed": false,
+      "htmlFallback": true
+    },
+    {
+      "path": "/.env",
+      "status": 404,
+      "contentType": "text/html; charset=utf-8",
+      "exposed": false,
+      "htmlFallback": true
+    }
+  ],
+  "cspCompatibilityAllowances": {
+    "unsafeEval": true,
+    "inlineStyles": true
+  },
+  "packages": [
+    {
+      "archiveIntegrity": "sha512-vg8Pw1x+AFKy4AMDvhuWl5cOYV8d698UoEANoFFhc79hqXDnZQqnOXoxw3HG907WHOg1JYOvLhP756boddFxpA==",
+      "source": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-6.5.438.tgz",
+      "name": "pdfjs-dist",
+      "version": "6.5.438"
+    },
+    {
+      "archiveIntegrity": "sha512-BoGW0ZZvuK6BUA5o32R9W3QuguiZY/y0IApTD+cCDNRhBen2YC3IdSLQcLQdazGGKvdzGF6+Y0Z9l7tmjDfzrg==",
+      "source": "https://registry.npmjs.org/jscanify/-/jscanify-1.4.3.tgz",
+      "name": "jscanify",
+      "version": "1.4.3"
+    },
+    {
+      "archiveIntegrity": "sha512-YyAXyvnmjTbR4bHQRLzex3CuINCDlQnBqoSYyjJwTP2x9jDLuKDzy7aKUl0hgx3uhcl7xzg32agn5vlie6HIlQ==",
+      "source": "https://registry.npmjs.org/jspdf/-/jspdf-4.2.1.tgz",
+      "name": "jspdf",
+      "version": "4.2.1"
+    },
+    {
+      "archiveIntegrity": "sha512-lzVl/Ar3P3zhpUT31NjqeCo1f+D5+YfpZ5J62eo2S14QNVOmHBTtbchHm/YAbOOOzCegFnKf4B3Qih9LuldcYQ==",
+      "source": "https://registry.npmjs.org/tesseract.js/-/tesseract.js-5.1.1.tgz",
+      "name": "tesseract.js",
+      "version": "5.1.1"
+    },
+    {
+      "archiveIntegrity": "sha512-KX3bYSU5iGcO1XJa+QGPbi+Zjo2qq6eBhNjSGR5E5q0JtzkoipJKOUQD7ph8kFyteCEfEQ0maWLu8MCXtvX5uQ==",
+      "source": "https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-5.1.1.tgz",
+      "name": "tesseract.js-core",
+      "version": "5.1.1"
+    },
+    {
+      "archiveIntegrity": "sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==",
+      "source": "https://registry.npmjs.org/jszip/-/jszip-3.10.1.tgz",
+      "name": "jszip",
+      "version": "3.10.1"
+    },
+    {
+      "source": "https://docs.opencv.org/4.7.0/opencv.js",
+      "name": "opencv",
+      "version": "4.7.0"
+    },
+    {
+      "source": "https://tessdata.projectnaptha.com/4.0.0/eng.traineddata.gz",
+      "name": "tessdata-eng",
+      "version": "4.0.0"
+    }
+  ],
+  "assetBytes": 39423545,
+  "result": "REVIEW"
+}

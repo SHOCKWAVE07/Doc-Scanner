@@ -1,0 +1,101 @@
+﻿{
+    "checks":  {
+                   "rootServed":  true,
+                   "cspResponseHeader":  true,
+                   "hstsResponseHeader":  true,
+                   "nosniffResponseHeader":  true,
+                   "referrerPolicyResponseHeader":  true,
+                   "permissionsPolicyResponseHeader":  true,
+                   "frameRestrictionResponseHeader":  true,
+                   "cspMetaTag":  true,
+                   "externalScriptTags":  [
+
+                                          ],
+                   "oldPdfJsReferenced":  false,
+                   "patchedPdfJsReferenced":  true,
+                   "pdfEvaluationDisabled":  true,
+                   "completeSessionClearPresent":  true,
+                   "securityPolicyAvailable":  true,
+                   "vendorManifestAvailable":  true
+               },
+    "method":  "Read-only GET requests to public application files; no exploit or resource-exhaustion payloads",
+    "target":  "https://docscannerme.netlify.app/",
+    "checkedAtUtc":  "2026-11-17T19:04:13.3979789Z",
+    "responses":  [
+                      {
+                          "status":  200,
+                          "url":  "https://docscannerme.netlify.app/",
+                          "decodedContentSha256":  "957f05a2d7e480758b3b7a7b9bdb6240371339ec4087e2458455dafbb4fb44f4",
+                          "headers":  {
+                                          "Content-Type":  "text/html; charset=UTF-8",
+                                          "Content-Security-Policy":  "default-src \u0027self\u0027; script-src \u0027self\u0027 \u0027unsafe-eval\u0027 \u0027wasm-unsafe-eval\u0027; worker-src \u0027self\u0027; connect-src \u0027self\u0027 blob: data:; img-src \u0027self\u0027 blob: data:; media-src \u0027self\u0027 blob:; style-src \u0027self\u0027 \u0027unsafe-inline\u0027; object-src \u0027none\u0027; base-uri \u0027self\u0027; form-action \u0027none\u0027; frame-ancestors \u0027none\u0027",
+                                          "Strict-Transport-Security":  "max-age=31536000; includeSubDomains; preload",
+                                          "X-Content-Type-Options":  "nosniff",
+                                          "Referrer-Policy":  "no-referrer",
+                                          "Permissions-Policy":  "camera=(self), microphone=(), geolocation=()",
+                                          "X-Frame-Options":  "DENY",
+                                          "Cache-Control":  "no-store"
+                                      }
+                      },
+                      {
+                          "status":  200,
+                          "url":  "https://docscannerme.netlify.app/js/services/pdf-import-handler.js",
+                          "decodedContentSha256":  "82c3731b041c83ebf12bb27b391add922a9b9cf5e23893625dacb3b61fb8023b",
+                          "headers":  {
+                                          "Content-Type":  "application/javascript; charset=UTF-8",
+                                          "Content-Security-Policy":  "default-src \u0027self\u0027; script-src \u0027self\u0027 \u0027unsafe-eval\u0027 \u0027wasm-unsafe-eval\u0027; worker-src \u0027self\u0027; connect-src \u0027self\u0027 blob: data:; img-src \u0027self\u0027 blob: data:; media-src \u0027self\u0027 blob:; style-src \u0027self\u0027 \u0027unsafe-inline\u0027; object-src \u0027none\u0027; base-uri \u0027self\u0027; form-action \u0027none\u0027; frame-ancestors \u0027none\u0027",
+                                          "Strict-Transport-Security":  "max-age=31536000; includeSubDomains; preload",
+                                          "X-Content-Type-Options":  "nosniff",
+                                          "Referrer-Policy":  "no-referrer",
+                                          "Permissions-Policy":  "camera=(self), microphone=(), geolocation=()",
+                                          "X-Frame-Options":  "DENY",
+                                          "Cache-Control":  "public,max-age=0,must-revalidate"
+                                      }
+                      },
+                      {
+                          "status":  200,
+                          "url":  "https://docscannerme.netlify.app/js/app.js",
+                          "decodedContentSha256":  "d195d72e29657d009e65f7fe36c1b5dd210fa69945cbdb239d7eed3c938a9516",
+                          "headers":  {
+                                          "Content-Type":  "application/javascript; charset=UTF-8",
+                                          "Content-Security-Policy":  "default-src \u0027self\u0027; script-src \u0027self\u0027 \u0027unsafe-eval\u0027 \u0027wasm-unsafe-eval\u0027; worker-src \u0027self\u0027; connect-src \u0027self\u0027 blob: data:; img-src \u0027self\u0027 blob: data:; media-src \u0027self\u0027 blob:; style-src \u0027self\u0027 \u0027unsafe-inline\u0027; object-src \u0027none\u0027; base-uri \u0027self\u0027; form-action \u0027none\u0027; frame-ancestors \u0027none\u0027",
+                                          "Strict-Transport-Security":  "max-age=31536000; includeSubDomains; preload",
+                                          "X-Content-Type-Options":  "nosniff",
+                                          "Referrer-Policy":  "no-referrer",
+                                          "Permissions-Policy":  "camera=(self), microphone=(), geolocation=()",
+                                          "X-Frame-Options":  "DENY",
+                                          "Cache-Control":  "public,max-age=0,must-revalidate"
+                                      }
+                      },
+                      {
+                          "status":  200,
+                          "url":  "https://docscannerme.netlify.app/js/services/security-policy.js",
+                          "decodedContentSha256":  "b0530a0a14f8ae91f3951fa52b888fd974d5b200530084fd82861df8dbd37944",
+                          "headers":  {
+                                          "Content-Type":  "application/javascript; charset=UTF-8",
+                                          "Content-Security-Policy":  "default-src \u0027self\u0027; script-src \u0027self\u0027 \u0027unsafe-eval\u0027 \u0027wasm-unsafe-eval\u0027; worker-src \u0027self\u0027; connect-src \u0027self\u0027 blob: data:; img-src \u0027self\u0027 blob: data:; media-src \u0027self\u0027 blob:; style-src \u0027self\u0027 \u0027unsafe-inline\u0027; object-src \u0027none\u0027; base-uri \u0027self\u0027; form-action \u0027none\u0027; frame-ancestors \u0027none\u0027",
+                                          "Strict-Transport-Security":  "max-age=31536000; includeSubDomains; preload",
+                                          "X-Content-Type-Options":  "nosniff",
+                                          "Referrer-Policy":  "no-referrer",
+                                          "Permissions-Policy":  "camera=(self), microphone=(), geolocation=()",
+                                          "X-Frame-Options":  "DENY",
+                                          "Cache-Control":  "public,max-age=0,must-revalidate"
+                                      }
+                      },
+                      {
+                          "status":  200,
+                          "url":  "https://docscannerme.netlify.app/vendor/manifest.json",
+                          "decodedContentSha256":  "56a7faafff6b8e74730ec01d50c6bd47b0004314d7eff00a78e0dbc72b828dfd",
+                          "headers":  {
+                                          "Content-Type":  "application/json",
+                                          "Content-Security-Policy":  "default-src \u0027self\u0027; script-src \u0027self\u0027 \u0027unsafe-eval\u0027 \u0027wasm-unsafe-eval\u0027; worker-src \u0027self\u0027; connect-src \u0027self\u0027 blob: data:; img-src \u0027self\u0027 blob: data:; media-src \u0027self\u0027 blob:; style-src \u0027self\u0027 \u0027unsafe-inline\u0027; object-src \u0027none\u0027; base-uri \u0027self\u0027; form-action \u0027none\u0027; frame-ancestors \u0027none\u0027",
+                                          "Strict-Transport-Security":  "max-age=31536000; includeSubDomains; preload",
+                                          "X-Content-Type-Options":  "nosniff",
+                                          "Referrer-Policy":  "no-referrer",
+                                          "Permissions-Policy":  "camera=(self), microphone=(), geolocation=()",
+                                          "X-Frame-Options":  "DENY",
+                                          "Cache-Control":  "public,max-age=0,must-revalidate"
+                                      }
+                      }
+                  ]
+}

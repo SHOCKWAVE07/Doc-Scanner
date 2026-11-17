@@ -1,0 +1,79 @@
+{
+  "checkedAtUtc": "2026-11-17T19:16:00.755Z",
+  "target": "https://docscannerme.netlify.app/",
+  "browser": "157.0.4341.60",
+  "result": "PASS",
+  "results": [
+    {
+      "name": "Scanner initializes with the deployed CSP and local OpenCV dependencies",
+      "result": "PASS"
+    },
+    {
+      "name": "A valid image is decoded, cropped, enhanced and saved",
+      "result": "PASS"
+    },
+    {
+      "name": "PDF export produces a downloadable PDF",
+      "result": "PASS"
+    },
+    {
+      "name": "The patched PDF module and local worker import a real PDF",
+      "result": "PASS"
+    },
+    {
+      "name": "Local OCR worker, WASM core and English language data recognize text",
+      "result": "PASS"
+    },
+    {
+      "name": "ZIP export loads its local dependency and downloads an archive",
+      "result": "PASS"
+    },
+    {
+      "name": "Clear Session removes editor, preview, OCR, pages and queued inputs",
+      "result": "PASS"
+    },
+    {
+      "name": "A pending image decode cannot repopulate a cleared session",
+      "result": "PASS"
+    },
+    {
+      "name": "Oversized image headers are rejected before image decoding",
+      "result": "PASS"
+    },
+    {
+      "name": "Late OCR completion cannot restore cleared sensitive text",
+      "result": "PASS"
+    },
+    {
+      "name": "Late page processing cannot restore pages after Clear Session",
+      "result": "PASS"
+    },
+    {
+      "name": "Late editor rotation cannot restore cleared pixels",
+      "result": "PASS"
+    },
+    {
+      "name": "No external runtime requests, missing assets, or unhandled browser errors",
+      "result": "PASS"
+    },
+    {
+      "name": "Untrusted filenames and OCR text render as text without DOM execution",
+      "result": "PASS"
+    },
+    {
+      "name": "Spoofed SVG input and oversized PDFs are refused before rendering",
+      "result": "PASS"
+    }
+  ],
+  "external": [],
+  "failedResponses": [],
+  "errors": [],
+  "consoleErrors": [
+    "Enhancement error: 13291152",
+    "Enhancement error: 11790328",
+    "AbortError: Scan session cleared.",
+    "Enhancement error: 15076904"
+  ],
+  "failedRequests": [],
+  "method": "Live HTTPS page; synthetic documents; no server mutations; delayed browser callbacks mocked for cancellation checks"
+}

@@ -1,0 +1,110 @@
+{
+  "checkedAtUtc": "2026-11-17T19:15:42.692Z",
+  "target": "https://docscannerme.netlify.app/",
+  "comparisons": [
+    {
+      "path": "/",
+      "status": 200,
+      "localSha256": "404bc7270b27c17240340be6e747e516b933fa047fbe97622ea55c1e9e666e53",
+      "liveSha256": "ca4c4f0ffcdd1b7cba828296ecf8e1595ab232b29e22e2a8a0d38a786401bc02",
+      "localBytes": 13971,
+      "liveBytes": 14000,
+      "equalAfterNewlineNormalization": false,
+      "equalIgnoringHtmlComments": true,
+      "localCRLF": 297,
+      "liveCRLF": 0,
+      "differences": [
+        {
+          "line": 5,
+          "local": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">",
+          "live": "<!-- This site is hosted on Netlify. Anyone can build and deploy a site"
+        },
+        {
+          "line": 6,
+          "local": "<meta name=\"theme-color\" content=\"#0b63f6\">",
+          "live": "     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=c3cbee69-64dc-4a3c-94d2-9d98a913a3f9"
+        },
+        {
+          "line": 7,
+          "local": "<meta name=\"referrer\" content=\"no-referrer\">",
+          "live": "     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->"
+        },
+        {
+          "line": 8,
+          "local": "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob: data:; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self' 'unsaf",
+          "live": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">"
+        },
+        {
+          "line": 9,
+          "local": "<title>GovScan — Mobile Document Scanner</title>",
+          "live": "<meta name=\"theme-color\" content=\"#0b63f6\">"
+        },
+        {
+          "line": 10,
+          "local": "",
+          "live": "<meta name=\"referrer\" content=\"no-referrer\">"
+        },
+        {
+          "line": 11,
+          "local": "<!-- OpenCV is required by jscanify -->",
+          "live": "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob: data:; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self' 'unsaf"
+        },
+        {
+          "line": 12,
+          "local": "",
+          "live": "<title>GovScan — Mobile Document Scanner</title>"
+        },
+        {
+          "line": 13,
+          "local": "<!-- PDF generation -->",
+          "live": ""
+        },
+        {
+          "line": 14,
+          "local": " <script src=\"vendor/opencv-4.7.0/opencv.js\" async></script>",
+          "live": "<!-- OpenCV is required by jscanify -->"
+        },
+        {
+          "line": 15,
+          "local": "<script src=\"vendor/jscanify-1.4.3/src/jscanify.js\"></script>",
+          "live": ""
+        },
+        {
+          "line": 16,
+          "local": "<script src=\"vendor/jspdf-4.2.1/dist/jspdf.umd.min.js\"></script>",
+          "live": "<!-- PDF generation -->"
+        }
+      ]
+    },
+    {
+      "path": "/vendor/jscanify-1.4.3/src/jscanify.js",
+      "status": 200,
+      "localSha256": "a09dadd36ad4103e693523677f1aba3740d06f2dcdeb3ed87c66022e6ac0d13d",
+      "liveSha256": "7463ca648de2c081a07ef556e79d5d6b7525f2a5e2ca55fefdcb69608b014ea3",
+      "localBytes": 7585,
+      "liveBytes": 7322,
+      "equalAfterNewlineNormalization": true,
+      "localCRLF": 263,
+      "liveCRLF": 0,
+      "differences": []
+    },
+    {
+      "path": "/vendor/jscanify-1.4.3/LICENSE",
+      "status": 200,
+      "localSha256": "5a4b4d2c8d93589a1f59d350d0b7fdde81e6d1892ed468eee9b4740d190d1939",
+      "liveSha256": "ffc790f0e6cc0f291593248135c1893669701742f8975738ec2513bab9e1e33d",
+      "localBytes": 1089,
+      "liveBytes": 1069,
+      "equalAfterNewlineNormalization": true,
+      "localCRLF": 20,
+      "liveCRLF": 0,
+      "differences": []
+    }
+  ],
+  "exposedReport": {
+    "status": 200,
+    "confidentialMarking": true,
+    "containsVulnerabilityDetails": true,
+    "containsRemediationLink": true
+  }
+}

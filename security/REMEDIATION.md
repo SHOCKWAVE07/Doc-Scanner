@@ -1,5 +1,9 @@
 # VAPT remediation and verification
 
+> A subsequent live reassessment is recorded in
+> [LIVE_VAPT_REPORT.md](../LIVE_VAPT_REPORT.md). It confirms the application
+> fixes are deployed and documents two Low deployment follow-ups.
+
 **Date:** 18 November 2026 (Asia/Calcutta)  
 **Baseline:** `2cfadba119b97ad8873ffb8d1d19b2f8413e1d7d`  
 **Status:** All four reported findings have application-level fixes. The local

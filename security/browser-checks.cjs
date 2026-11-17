@@ -1,4 +1,4 @@
-// Local end-to-end security checks against the installed Edge browser.
+// End-to-end checks against the local app or an explicitly supplied HTTPS deployment.
 const {chromium}=require('playwright');
 const http=require('node:http');
 const fs=require('node:fs');
@@ -7,6 +7,8 @@ const assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const policy=html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
+const target=process.argv[2] ? new URL(process.argv[2]) : null;
+if(target && target.protocol!=='https:')throw new Error('Live checks require HTTPS.');
 const results=[], external=[], errors=[], failedResponses=[], consoleErrors=[], failedRequests=[];
 const server=http.createServer((req,res)=>{
   let target;
@@ -27,14 +29,14 @@ const server=http.createServer((req,res)=>{
 let browser;
 async function check(name,fn){await fn();results.push({name,result:'PASS'});console.log('PASS',name);}
 (async()=>{
-  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  const origin=`http://127.0.0.1:${server.address().port}`;
+  if(!target)await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const origin=target ? target.origin : `http://127.0.0.1:${server.address().port}`;
   browser=await chromium.launch({channel:'msedge',headless:true});
   const context=await browser.newContext({acceptDownloads:true,serviceWorkers:'block'});
   await context.route('**/*',route=>{
     const url=route.request().url();
     if(url.startsWith(origin+'/')||url.startsWith('blob:')||url.startsWith('data:'))return route.continue();
-    external.push(url);return route.abort();
+    external.push(url);return target ? route.continue() : route.abort();
   });
   const page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
@@ -157,6 +159,42 @@ async function check(name,fn){await fn();results.push({name,result:'PASS'});cons
   await check('No external runtime requests, missing assets, or unhandled browser errors',()=>{
     assert.deepEqual(external,[]);assert.deepEqual(failedResponses,[]);assert.deepEqual(errors,[]);
   });
-  fs.writeFileSync(path.join(__dirname,'browser-results.json'),JSON.stringify({browser:await browser.version(),results},null,2)+'\n');
+  await check('Untrusted filenames and OCR text render as text without DOM execution',async()=>{
+    const result=await page.evaluate(async()=>{
+      globalThis.__vaptDomMarker=0;
+      const payload='<img src=x onerror="globalThis.__vaptDomMarker=1">';
+      await handleFiles([new File([testImage],payload+'.png',{type:'image/png'})]);
+      await $('saveSelection').onclick();
+      const filenameSafe=$('pages').textContent.includes(payload)&&!document.querySelector('img[src="x"]');
+      const original=Tesseract.createWorker;
+      Tesseract.createWorker=async()=>({recognize:async()=>({data:{text:'</textarea>'+payload}}),terminate:async()=>{}});
+      await runOcr(0);Tesseract.createWorker=original;
+      const textSafe=ocrText.value==='</textarea>'+payload&&!document.querySelector('img[src="x"]');
+      const marker=globalThis.__vaptDomMarker;clearSensitiveState();
+      return {filenameSafe,textSafe,marker};
+    });
+    assert.deepEqual(result,{filenameSafe:true,textSafe:true,marker:0});
+  });
+  await check('Spoofed SVG input and oversized PDFs are refused before rendering',async()=>{
+    const result=await page.evaluate(async()=>{
+      let imageRejected=false,pdfRejected=false,read=false;
+      try{await validateImageFile(new File(['<svg xmlns="http://www.w3.org/2000/svg"></svg>'],'spoof.png',{type:'image/png'}));}
+      catch{imageRejected=true;}
+      try{await pdfImportHandler.importPDF({name:'oversized.pdf',type:'application/pdf',size:1024**3,arrayBuffer:async()=>{read=true;return new ArrayBuffer(1);}});}
+      catch{pdfRejected=true;}
+      return {imageRejected,pdfRejected,read};
+    });
+    assert.deepEqual(result,{imageRejected:true,pdfRejected:true,read:false});
+  });
 })().catch(error=>{console.error(error);console.error({external,failedResponses,errors,consoleErrors,failedRequests});process.exitCode=1;})
-  .finally(async()=>{await browser?.close();server.close();});
+  .finally(async()=>{
+    // Include events from every test, including checks added after the network check.
+    if(external.length||failedResponses.length||errors.length)process.exitCode=1;
+    fs.writeFileSync(path.join(__dirname,target?'live-browser-results.json':'browser-results.json'),JSON.stringify({
+      checkedAtUtc:new Date().toISOString(),target:target?.href||'loopback test server',browser:browser?await browser.version():null,
+      result:process.exitCode?'FAIL':'PASS',results,external,failedResponses,errors,
+      consoleErrors:consoleErrors.map(message=>message.slice(0,1000)),failedRequests,
+      method:target?'Live HTTPS page; synthetic documents; no server mutations; delayed browser callbacks mocked for cancellation checks':'Local end-to-end checks',
+    },null,2)+'\n');
+    await browser?.close();if(server.listening)server.close();
+  });
