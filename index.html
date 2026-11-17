@@ -4,21 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b63f6">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob: data:; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>GovScan — Mobile Document Scanner</title>
 
 <!-- OpenCV is required by jscanify -->
 
 <!-- PDF generation -->
- <script src="https://docs.opencv.org/4.7.0/opencv.js" async></script>
-<script src="https://cdn.jsdelivr.net/npm/jscanify@1.4.3/src/jscanify.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+ <script src="vendor/opencv-4.7.0/opencv.js" async></script>
+<script src="vendor/jscanify-1.4.3/src/jscanify.js"></script>
+<script src="vendor/jspdf-4.2.1/dist/jspdf.umd.min.js"></script>
+<script src="vendor/tesseract.js-5.1.1/dist/tesseract.min.js"></script>
 
 <link rel="stylesheet" href="styles.css">
 
 <!-- Configuration and State -->
 <script src="js/config.js"></script>
 <script src="js/state.js"></script>
+<script src="js/services/security-policy.js"></script>
 
 <!-- Services -->
 <script src="js/services/quality-validator.js"></script>
@@ -54,8 +57,8 @@
       <button class="btn primary" id="galleryBtn">🖼️ Add Photos</button>
       <button class="btn primary" id="importPdfBtn">📄 Import PDF</button>
     </div>
-    <input id="cameraInput" type="file" accept="image/*" capture="environment">
-    <input id="galleryInput" type="file" accept="image/*" multiple>
+    <input id="cameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+    <input id="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" multiple>
     <input id="pdfInput" type="file" accept=".pdf" style="display:none;">
     <div class="drop" id="dropZone">Tap <strong>Add Photos</strong> to select multiple images, or use <strong>Take Photo</strong> on mobile.</div>
     <div class="status" id="status">Loading scanner…</div>
@@ -224,7 +227,7 @@
 
 <div class="bottom">
   <div class="bottom-inner">
-    <button class="btn danger" id="clearAll" disabled>🗑 Clear All</button>
+    <button class="btn danger" id="clearAll">Clear Session</button>
     <button class="btn primary" id="pdfBtn" disabled>📄 Save All </button>
   </div>
 </div>

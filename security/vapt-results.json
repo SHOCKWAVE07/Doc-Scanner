@@ -1,0 +1,29 @@
+﻿{
+  "scope": "Local mocked checks; no real malicious PDF or browser exploitation",
+  "results": [
+    {
+      "name": "PDF import leaves isEvalSupported at library default in both entry points",
+      "result": "CONFIRMED",
+      "method": "local code execution with mocked browser/PDF APIs"
+    },
+    {
+      "name": "PDF import accepts declared 1 GiB input, 1000 pages, and a 100000 x 100000 viewport without limits",
+      "result": "CONFIRMED",
+      "method": "local code execution with mocked browser/PDF APIs"
+    },
+    {
+      "name": "Failed PDF import leaves earlier object URLs unreleased and does not destroy PDF document",
+      "result": "CONFIRMED",
+      "method": "local code execution with mocked browser/PDF APIs"
+    },
+    {
+      "name": "Clear All retains editor pixels, preview URL, queued files, and OCR text",
+      "result": "CONFIRMED",
+      "method": "local code execution with mocked browser/PDF APIs"
+    },
+    {
+      "name": "JavaScript syntax (15 application files)",
+      "result": "PASS"
+    }
+  ]
+}

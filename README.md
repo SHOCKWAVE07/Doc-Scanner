@@ -34,6 +34,10 @@ a PDF, JPEG, or ZIP archive.
 4. Confirm the detected crop, make any adjustments, then choose **Save Page**.
 5. Reorder or edit pages as needed, then use **Save All** to download a PDF, JPEG, or ZIP.
 
+Ship the `vendor/` directory with the site: dependencies, PDF rendering, and OCR
+assets are now hosted locally. See [SECURITY.md](SECURITY.md) for enforced input
+limits, session clearing, dependency verification, and required hosting headers.
+
 ## Documentation
 
 See [FEATURES.md](FEATURES.md) for a detailed explanation of how every feature works, including the scanning, processing, OCR, and export flows.

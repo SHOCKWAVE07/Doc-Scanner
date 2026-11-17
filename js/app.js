@@ -33,6 +33,51 @@ let draggedPageIndex=-1;
 let pagePointerDrag=null;
 let isAutoRotating=false;
 let currentImageIsSavedPage=false;
+let sessionEpoch=0, sessionController=new AbortController();
+let imageIntakeBusy=false, imageLoading=false, pageSaveBusy=false, exportBusy=false;
+let ocrBusy=false, cancelOcr=null, ocrRequest=0;
+let clearCameraState=null;
+let currentInputBytes=0;
+
+function assertSession(epoch){
+  if(epoch!==sessionEpoch) throw new DOMException('Scan session cleared.', 'AbortError');
+}
+function scanBytes(){return pages.reduce((n,p)=>n+p.blob.size,0);}
+function queuedBytes(){return fileQueue.reduce((n,file)=>n+file.size,0);}
+function activeInputBytes(){return currentImage && !currentImageIsSavedPage ? currentInputBytes : 0;}
+function checkPageBudget(blob, replacingId=null){
+  const existing=pages.find(p=>p.id===replacingId);
+  if((!existing && pages.length+fileQueue.length>=SECURITY_LIMITS.maxPages) ||
+     scanBytes()+queuedBytes()-(existing?.blob.size||0)+blob.size>SECURITY_LIMITS.maxSessionBytes){
+    throw new Error('Scan limit reached: 100 pages or 100 MiB. Export and clear this session.');
+  }
+}
+function clearSensitiveState(){
+  sessionEpoch++;
+  sessionController.abort(); sessionController=new AbortController();
+  pdfImportHandler.cancel(); cancelOcr?.(); ocrRequest++;
+  autoCaptureManager?.disable(); cameraStreamManager?.stop();
+  clearCameraState?.();
+  $('autoCaptureToggle').checked=false;
+  $('cameraStage').hidden=true; $('autoCaptureStatus').style.display='none';
+  const urls=new Set(pages.map(p=>p.url));
+  if(currentImageURL) urls.add(currentImageURL);
+  urls.forEach(url=>URL.revokeObjectURL(url));
+  pages=[]; fileQueue=[]; currentImage=null; currentImageURL=null;
+  currentImageIsSavedPage=false; currentFileName=''; currentInputBytes=0; pendingOptimized=null;
+  corners=[]; detectedCorners=[]; previewIndex=-1; pagePointerDrag=null;
+  pdfPageManager.clearEditingPage();
+  if(cropUIManager) cropUIManager.corners=[];
+  quadEl.setAttribute('points','');
+  for(const canvas of document.querySelectorAll('canvas')) canvas.width=canvas.height=0;
+  previewImage.removeAttribute('src'); ocrText.value=''; ocrStatus.textContent='';
+  for(const modal of [previewModal,ocrModal,exportModal]) modal.classList.remove('open');
+  for(const input of [cameraInput,galleryInput,pdfInput]) input.value='';
+  selectionCard.style.display='none'; sizeInfo.classList.remove('show');
+  qualityFeedback.style.display='none'; exportNameEl.value='Document';
+  appState?.reset();
+  renderPages(); setStatus('Session cleared. Take or add a new photo.',0);
+}
 
 // UI State
 let selectedCompressionProfile = "balanced";
@@ -370,6 +415,7 @@ function setupAutoCapture() {
   const cameraGuidePolygon = $("cameraGuidePolygon");
   const cameraGuideLabel = $("cameraGuideLabel");
   let latestCameraFrame = null;
+  clearCameraState=()=>{latestCameraFrame=null;};
 
   function updateCameraGuide(frame) {
     if (!cameraGuide || !cameraGuidePolygon || !frame.canvas) return;
@@ -429,8 +475,10 @@ function setupAutoCapture() {
   if (autoCaptureToggle) {
     autoCaptureToggle.addEventListener("change", async (e) => {
       if (e.target.checked) {
+        const epoch=sessionEpoch;
         try {
           await setupCameraPreview(cameraStream, previewCanvas);
+          assertSession(epoch);
           cameraStage.hidden = false;
           cameraStreamManager.start(async (frame) => {
             latestCameraFrame = frame.canvas;
@@ -452,6 +500,7 @@ function setupAutoCapture() {
           toast("Auto Capture enabled");
           logger.info("Auto Capture enabled");
         } catch (error) {
+          if(epoch!==sessionEpoch) return;
           e.target.checked = false;
           autoCaptureStatus.style.display = "none";
           toast(error.message || "Camera could not be started");
@@ -474,6 +523,7 @@ function setupAutoCapture() {
 
   // Auto capture callbacks
   autoCaptureManager.setOnCapture(async () => {
+    const epoch=sessionEpoch;
     logger.info("Auto capture triggered");
     if (statusIndicator) statusIndicator.classList.remove("searching", "detected", "unstable");
     
@@ -487,6 +537,7 @@ function setupAutoCapture() {
       const blob = await new Promise((resolve) => {
         capturedFrame.toBlob(resolve, "image/jpeg", 0.95);
       });
+      assertSession(epoch);
       if (!blob) throw new Error("Could not capture a camera frame");
       await openForSelection(new File([blob], `Camera-${Date.now()}.jpg`, { type: "image/jpeg" }));
       await addCurrentPage();
@@ -568,11 +619,14 @@ async function setupCameraPreview(videoElement, previewCanvas) {
 
 // Add current page to document
 async function addCurrentPage() {
+  if(pageSaveBusy) return;
   if (!currentImage || !corners || corners.length !== 4) {
     toast("Please adjust document boundaries first");
     return;
   }
 
+  const epoch=sessionEpoch;
+  pageSaveBusy=true;
   setStatus("Processing document…", 50);
 
   try {
@@ -596,6 +650,8 @@ async function addCurrentPage() {
 
     // Compress image
     const compressed = await compressImage(enhanced.canvas, profile.jpegQuality);
+    assertSession(epoch);
+    checkPageBudget(compressed.blob,pdfPageManager.getEditingPage());
 
     // Check if we're editing an existing page (Phase 6)
     const editingPageId = pdfPageManager.getEditingPage();
@@ -658,10 +714,11 @@ async function addCurrentPage() {
       selectionCard.style.display = "none";
     }
   } catch (e) {
+    if(epoch!==sessionEpoch) return;
     logger.error("Failed to add page", { error: e.message });
     toast("Error processing image: " + e.message);
     setStatus("Error: " + e.message, 0);
-  }
+  } finally {pageSaveBusy=false;}
 }
 
 // Perspective correction using corners
@@ -741,20 +798,29 @@ async function handlePdfImport(files) {
   if (!files.length) return;
 
   const pdfFile = files[0];
-  if (!pdfFile.type.includes('pdf')) {
+  if (pdfFile.type!=='application/pdf' && !pdfFile.name.toLowerCase().endsWith('.pdf')) {
     toast("Please select a PDF file");
     pdfInput.value = "";
     return;
   }
 
+  const epoch=sessionEpoch;
   try {
     setStatus("Importing PDF…", 10);
     importPdfBtn.disabled = true;
 
     const importedPages = await pdfImportHandler.importPDF(pdfFile, (current, total) => {
+      assertSession(epoch);
       const progress = 10 + (current / total) * 80;
       setStatus(`Importing PDF: ${current}/${total}…`, progress);
-    });
+    }, {signal:sessionController.signal, maxPages:SECURITY_LIMITS.maxPages-pages.length-fileQueue.length-(currentImage&&!currentImageIsSavedPage?1:0),
+      maxBytes:SECURITY_LIMITS.maxSessionBytes-scanBytes()-queuedBytes()-activeInputBytes()});
+    if(epoch!==sessionEpoch){importedPages.forEach(p=>URL.revokeObjectURL(p.url));return;}
+    if(pages.length+fileQueue.length+importedPages.length+(currentImage&&!currentImageIsSavedPage?1:0)>SECURITY_LIMITS.maxPages ||
+       scanBytes()+queuedBytes()+activeInputBytes()+importedPages.reduce((n,p)=>n+p.blob.size,0)>SECURITY_LIMITS.maxSessionBytes){
+      importedPages.forEach(p=>URL.revokeObjectURL(p.url));
+      throw new Error('Scan memory or page limit reached.');
+    }
 
     if (importedPages.length === 0) {
       toast("PDF has no pages");
@@ -772,8 +838,9 @@ async function handlePdfImport(files) {
     setStatus(`Imported ${importedPages.length} page${importedPages.length > 1 ? "s" : ""} from PDF`, 100);
     toast(`PDF imported: ${importedPages.length} page${importedPages.length > 1 ? "s" : ""}`);
 
-    logger.info("PDF imported", { fileName: pdfFile.name, pageCount: importedPages.length });
+    logger.info("PDF imported", { pageCount: importedPages.length });
   } catch (e) {
+    if(epoch!==sessionEpoch) return;
     console.error("PDF import error:", e);
     toast("Failed to import PDF: " + e.message);
     setStatus("PDF import failed", 0);
@@ -785,6 +852,19 @@ async function handlePdfImport(files) {
 
 async function handleFiles(files){
   if(!files.length) return;
+  if(imageIntakeBusy) return toast('Photos are being checked. Please wait.');
+  const epoch=sessionEpoch;
+  imageIntakeBusy=true;
+  try{
+  if(files.length+fileQueue.length+pages.length+(currentImage?1:0)>SECURITY_LIMITS.maxPages)
+    throw new Error('A scan can contain at most 100 pages, including queued photos.');
+  if(files.reduce((n,f)=>n+f.size,0)+queuedBytes()+scanBytes()+activeInputBytes()>SECURITY_LIMITS.maxSessionBytes)
+    throw new Error('Selected files exceed the 100 MiB session budget.');
+  for(const file of files){await validateImageFile(file);assertSession(epoch);}
+  // PDF imports may have finished while file headers were being read.
+  if(files.length+fileQueue.length+pages.length+(currentImage&&!currentImageIsSavedPage?1:0)>SECURITY_LIMITS.maxPages ||
+     files.reduce((n,f)=>n+f.size,0)+queuedBytes()+scanBytes()+activeInputBytes()>SECURITY_LIMITS.maxSessionBytes)
+    throw new Error('The remaining scan budget changed. Export and clear the session.');
   let added=0;
 
   for(const file of files){
@@ -804,6 +884,8 @@ async function handleFiles(files){
   }
 
   cameraInput.value=""; galleryInput.value="";
+  }catch(error){if(epoch===sessionEpoch) toast(error.message);}
+  finally{imageIntakeBusy=false;renderPages();}
 }
 
 function loadImg(url){
@@ -816,11 +898,22 @@ function loadImg(url){
 
 async function openForSelection(file){
   if(!cvReady) return toast("Scanner is still loading.");
+  if(imageLoading) throw new Error('Another image is loading. Please wait.');
+  const epoch=sessionEpoch;
+  imageLoading=true;
+  let url;
+  try{
+  await validateImageFile(file); assertSession(epoch);
+  url=URL.createObjectURL(file);
+  const image=await loadImg(url);
+  assertSession(epoch);
+  validateDimensions(image.naturalWidth,image.naturalHeight);
   if(currentImageURL && !currentImageIsSavedPage) URL.revokeObjectURL(currentImageURL);
   currentFileName=file.name || "document";
-  currentImageURL=URL.createObjectURL(file);
+  currentImageURL=url;
   currentImageIsSavedPage=false;
-  currentImage=await loadImg(currentImageURL);
+  currentImage=image;
+  currentInputBytes=file.size;
   pendingOptimized=null;
   sizeInfo.classList.remove("show");
   beforeSizeEl.textContent="—";
@@ -830,7 +923,10 @@ async function openForSelection(file){
   selectionCard.style.display="block";
   drawSource();
   await autoDetect();
+  assertSession(epoch);
   selectionCard.scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(error){if(url) URL.revokeObjectURL(url);throw error;}
+  finally{imageLoading=false;renderPages();}
 }
 
 function drawSource(){
@@ -993,6 +1089,7 @@ function defaultCorners(){
 }
 
 async function autoDetect({skipOrientation=false}={}){
+  const epoch=sessionEpoch;
   if(!scanner || !currentImage || !cvReady) return;
 
   setStatus("Detecting paper…",25);
@@ -1060,6 +1157,7 @@ async function autoDetect({skipOrientation=false}={}){
       );
     }
   }catch(e){
+    if(epoch!==sessionEpoch) return;
     console.error("Auto-detect error:",e);
 
     detectedCorners=[];
@@ -1079,6 +1177,7 @@ async function autoDetect({skipOrientation=false}={}){
 }
 
 async function detectAndApplyOrientation(mat){
+  const epoch=sessionEpoch;
   if(!orientationDetector || !SCANNER_CONFIG.orientation.autoDetectEnabled){
     return;
   }
@@ -1110,12 +1209,14 @@ async function detectAndApplyOrientation(mat){
     ){
       // Auto-rotate the image
       await autoRotateImage(orientationResult.rotationAngle);
+      assertSession(epoch);
       toast("Document auto-rotated to correct orientation");
       setStatus("Document rotated. 4 corners detected. Drag to adjust if needed.", 55);
     }else{
       setStatus("4 corners detected. Drag them to the exact document corners.", 45);
     }
   }catch(e){
+    if(epoch!==sessionEpoch) return;
     logger?.warn("Orientation detection failed", {error: e.message});
     // Continue without rotation - not a critical failure
     setStatus("4 corners detected. Drag them to the exact document corners.", 45);
@@ -1123,6 +1224,7 @@ async function detectAndApplyOrientation(mat){
 }
 
 async function autoRotateImage(angle){
+  const epoch=sessionEpoch;
   if(!orientationDetector || !currentImage || isAutoRotating){
     return;
   }
@@ -1131,6 +1233,7 @@ async function autoRotateImage(angle){
     isAutoRotating=true;
     // Rotate the source canvas
     const rotatedCanvas = await orientationDetector.rotateCanvas(sourceCanvas, angle);
+    assertSession(epoch);
     
     // Update the display
     sourceCanvas.width = rotatedCanvas.width;
@@ -1145,6 +1248,7 @@ async function autoRotateImage(angle){
     // Re-detect corners on rotated image
     await autoDetect({skipOrientation:true});
   }catch(e){
+    if(epoch!==sessionEpoch) return;
     logger?.error("Auto-rotation failed", {error: e.message});
     toast("Could not rotate image");
   }finally{
@@ -1397,13 +1501,16 @@ async function buildScanVariants(profileName = 'balanced'){
 
 optimizeBtn.onclick=async()=>{
   if(corners.length!==4 || !currentImage) return;
+  const epoch=sessionEpoch;
 
   optimizeBtn.disabled=true;
   setStatus("Enhancing text and compressing image…",70);
 
   try{
     const result=await buildScanVariants(selectedCompressionProfile);
+    assertSession(epoch);
     await showOptimizedCrop(result);
+    assertSession(epoch);
 
     beforeSizeEl.textContent=formatBytes(result.rawBlob.size);
     afterSizeEl.textContent=formatBytes(result.optimizedBlob.size);
@@ -1431,6 +1538,7 @@ optimizeBtn.onclick=async()=>{
     toast("Image enhanced and compressed");
   }catch(e){
     console.error(e);
+    if(epoch!==sessionEpoch) return;
     toast("Could not optimize image.");
     setStatus("Optimization failed.",0);
   }finally{
@@ -1439,8 +1547,11 @@ optimizeBtn.onclick=async()=>{
 };
 
 async function showOptimizedCrop(result){
+  const epoch=sessionEpoch;
   const previewUrl=URL.createObjectURL(result.optimizedBlob);
-  const previewImage=await loadImg(previewUrl);
+  let previewImage;
+  try{previewImage=await loadImg(previewUrl);assertSession(epoch);}
+  catch(error){URL.revokeObjectURL(previewUrl);throw error;}
 
   if(currentImageURL && !currentImageIsSavedPage) URL.revokeObjectURL(currentImageURL);
   currentImageURL=previewUrl;
@@ -1467,6 +1578,7 @@ async function showOptimizedCrop(result){
 
 rotateSelectionBtn.onclick=async()=>{
   if(!currentImage || !sourceCanvas.width || !sourceCanvas.height) return;
+  const epoch=sessionEpoch;
 
   rotateSelectionBtn.disabled=true;
   try{
@@ -1478,7 +1590,9 @@ rotateSelectionBtn.onclick=async()=>{
     ctx.rotate(Math.PI/2);
     ctx.drawImage(sourceCanvas,0,0);
 
-    currentImage=await loadImg(rotatedCanvas.toDataURL("image/png"));
+    const image=await loadImg(rotatedCanvas.toDataURL("image/png"));
+    assertSession(epoch);
+    currentImage=image;
     detectedCorners=[];
     pendingOptimized=null;
     sizeInfo.classList.remove("show");
@@ -1496,6 +1610,7 @@ rotateSelectionBtn.onclick=async()=>{
     renderCorners();
     setStatus("Cropped image rotated. Save Page when ready.",90);
   }catch(e){
+    if(epoch!==sessionEpoch) return;
     console.error("Rotate selection error:",e);
     toast("Could not rotate image.");
   }finally{
@@ -1505,6 +1620,9 @@ rotateSelectionBtn.onclick=async()=>{
 
 $("saveSelection").onclick=async()=>{
   if(corners.length!==4 || !currentImage) return;
+  if(pageSaveBusy) return;
+  pageSaveBusy=true;
+  const epoch=sessionEpoch;
 
   $("saveSelection").disabled=true;
   optimizeBtn.disabled=true;
@@ -1518,7 +1636,9 @@ $("saveSelection").onclick=async()=>{
       result=await buildScanVariants(selectedCompressionProfile);
     }
 
+    assertSession(epoch);
     const blob=result.optimizedBlob;
+    checkPageBudget(blob,pdfPageManager.getEditingPage());
     const url=URL.createObjectURL(blob);
 
     // Create page with enhanced metadata
@@ -1594,8 +1714,9 @@ $("saveSelection").onclick=async()=>{
     }
   }catch(e){
     console.error(e);
-    toast("Could not save page.");
+    if(epoch===sessionEpoch) toast(e.message || 'Could not save page.');
   }finally{
+    pageSaveBusy=false;
     $("saveSelection").disabled=false;
     optimizeBtn.disabled=false;
   }
@@ -1621,7 +1742,8 @@ function renderPages(){
     card.append(badge,img,meta); pagesEl.appendChild(card);
   });
   pageCountEl.textContent=pages.length+" "+(pages.length===1?"page":"pages");
-  pdfBtn.disabled=pages.length===0; clearAllBtn.disabled=pages.length===0;
+  pdfBtn.disabled=pages.length===0;
+  clearAllBtn.disabled=false;
   exportImagesEl.disabled=pages.length!==1;
   exportImagesOption.title=pages.length===1
     ? "Download the single scanned page as a JPEG"
@@ -1682,6 +1804,8 @@ function makeBtn(icon,title,cls){
 async function runOcr(i){
   const page=pages[i];
   if(!page) return;
+  if(ocrBusy) return toast('OCR is already running. Please wait.');
+  const epoch=sessionEpoch, request=++ocrRequest;
   if(!window.Tesseract){
     toast("OCR is still loading.");
     return;
@@ -1696,12 +1820,15 @@ async function runOcr(i){
     const result=await recognizePage(
       page,
       (message,progress)=>{
+        if(epoch!==sessionEpoch || request!==ocrRequest) return;
         ocrStatus.textContent=`${message} ${Math.round(progress*100)}%`;
       }
     );
+    if(epoch!==sessionEpoch || request!==ocrRequest || !pages.includes(page)) return;
     ocrText.value=result.text.trim();
     ocrStatus.textContent=ocrText.value ? "Text recognized." : "No text was found in this image.";
   }catch(e){
+    if(epoch!==sessionEpoch || request!==ocrRequest) return;
     console.error("OCR error:",e);
     ocrStatus.textContent="OCR failed. Check your connection and try again.";
   }
@@ -1709,19 +1836,45 @@ async function runOcr(i){
 
 async function recognizePage(page,onProgress){
   if(!window.Tesseract) throw new Error("OCR is still loading.");
-
-  const result=await Tesseract.recognize(page.url,"eng",{
+  if(ocrBusy) throw new Error('OCR is already running.');
+  ocrBusy=true;
+  const epoch=sessionEpoch;
+  let cancelled=false, rejectCancellation;
+  const cancellation=new Promise((_,reject)=>{rejectCancellation=reject;});
+  const cancel=()=>{cancelled=true;rejectCancellation(new Error('OCR cancelled or timed out.'));};
+  cancelOcr=cancel;
+  const timer=setTimeout(cancel,SECURITY_LIMITS.operationTimeout);
+  const workerPromise=Promise.resolve().then(()=>Tesseract.createWorker('eng',1,{
+    workerPath:new URL('vendor/tesseract.js-5.1.1/dist/worker.min.js',document.baseURI).href,
+    corePath:new URL('vendor/tesseract.js-core-5.1.1/',document.baseURI).href,
+    langPath:new URL('vendor/tessdata/',document.baseURI).href,
+    workerBlobURL:false, cacheMethod:'none', gzip:true,
     logger:message=>{
-      if(message.status && typeof message.progress==="number"){
+      if(!cancelled && epoch===sessionEpoch && message.status && typeof message.progress==='number')
         onProgress?.(message.status,message.progress);
-      }
-    }
-  });
-
-  return result.data;
+    },
+  }));
+  try{
+    const result=await Promise.race([workerPromise.then(async worker=>{
+      if(cancelled) throw new Error('OCR cancelled.');
+      assertSession(epoch);
+      return worker.recognize(page.url);
+    }),cancellation]);
+    assertSession(epoch);
+    return result.data;
+  }finally{
+    clearTimeout(timer); cancelled=true;
+    // Also terminate a worker that finishes starting after cancellation.
+    workerPromise.then(worker=>worker.terminate()).catch(()=>{}).finally(()=>{ocrBusy=false;});
+    if(cancelOcr===cancel) cancelOcr=null;
+  }
 }
 
-function closeOcr(){ocrModal.classList.remove("open")}
+function closeOcr(){
+  ocrRequest++; cancelOcr?.();
+  ocrText.value=''; ocrStatus.textContent='';
+  ocrModal.classList.remove('open');
+}
 $("closeOcr").onclick=closeOcr;
 $("closeOcrAction").onclick=closeOcr;
 ocrModal.onclick=e=>{if(e.target===ocrModal)closeOcr()};
@@ -1738,6 +1891,8 @@ $("copyOcr").onclick=async()=>{
 
 async function rotateStoredPage(i){
   const p=pages[i];
+  if(!p) return;
+  const epoch=sessionEpoch;
 
   const dims=rotatedDimensions(p.w,p.h,(p.rotation+90)%360);
 
@@ -1773,6 +1928,9 @@ async function rotateStoredPage(i){
     );
   });
 
+  assertSession(epoch);
+  if(!pages.includes(p)) return;
+  checkPageBudget(blob,p.id);
   const oldUrl=p.url;
   p.blob=blob;
   p.url=URL.createObjectURL(blob);
@@ -1800,6 +1958,17 @@ async function rotatePage(i){
   }
 }
 function deletePage(i){
+  if(exportBusy || pageSaveBusy) return toast('Wait for processing to finish, or clear the session.');
+  if(!pages[i]) return;
+  sessionEpoch++; sessionController.abort(); sessionController=new AbortController();
+  pdfImportHandler.cancel(); closeOcr(); closePreview();
+  if(currentImageIsSavedPage || pdfPageManager.getEditingPage()===pages[i].id){
+    currentImage=null; currentImageURL=null; currentImageIsSavedPage=false;
+    currentFileName=''; currentInputBytes=0;
+    pendingOptimized=null; corners=[]; detectedCorners=[];
+    for(const canvas of document.querySelectorAll('canvas')) canvas.width=canvas.height=0;
+    selectionCard.style.display='none'; pdfPageManager.clearEditingPage();
+  }
   const p=pages[i]; URL.revokeObjectURL(p.url); pages.splice(i,1);
   if(previewIndex===i) closePreview();
   renderPages(); toast("Page deleted");
@@ -1808,6 +1977,8 @@ function deletePage(i){
 // Edit page (crop/enhance) - Phase 6
 async function editPage(i){
   if(i<0 || i>=pages.length) return;
+  if(pageSaveBusy || imageLoading) return toast('Wait for image processing to finish.');
+  const epoch=sessionEpoch;
   
   const page=pages[i];
   
@@ -1827,6 +1998,9 @@ async function editPage(i){
       img.onerror=reject;
     });
     
+    assertSession(epoch);
+    if(!pages.includes(page)) return;
+    if(currentImageURL && !currentImageIsSavedPage) URL.revokeObjectURL(currentImageURL);
     // Set as current image for editing
     currentImage=img;
     currentImageURL=page.url;
@@ -1877,7 +2051,7 @@ function updatePreview(){
   const p=pages[previewIndex]; if(!p)return;
   previewTitle.textContent=`Page ${previewIndex+1} of ${pages.length}`;
   previewImage.src=p.url; }
-function closePreview(){previewModal.classList.remove("open");previewIndex=-1}
+function closePreview(){previewModal.classList.remove("open");previewImage.removeAttribute('src');previewIndex=-1}
 $("closePreview").onclick=closePreview;
 previewModal.onclick=e=>{if(e.target===previewModal)closePreview()};
 
@@ -1920,10 +2094,8 @@ $("previewEdit").onclick=()=>{if(previewIndex>=0)editPage(previewIndex)};
 $("previewOcr").onclick=()=>{if(previewIndex>=0)runOcr(previewIndex)};
 
 clearAllBtn.onclick=()=>{
-  if(!pages.length)return;
-  if(!confirm("Delete all scanned pages?"))return;
-  pages.forEach(p=>URL.revokeObjectURL(p.url)); pages=[];
-  renderPages(); toast("All pages cleared");
+  if(!confirm('Clear this session, including all pages, queued photos, previews and OCR text?'))return;
+  clearSensitiveState(); toast('Session cleared');
 };
 
 function rotatedDimensions(w,h,rotation){
@@ -1991,7 +2163,8 @@ function addSearchableText(doc,data,page,x,y,drawW,drawH){
   if(hidden) doc.restoreGraphicsState();
 }
 
-function downloadBlob(blob,name){
+function downloadBlob(blob,name,epoch=sessionEpoch){
+  assertSession(epoch);
   const url=URL.createObjectURL(blob);
   const link=document.createElement("a");
   link.href=url;
@@ -2002,6 +2175,8 @@ function downloadBlob(blob,name){
 
 async function savePDF(fileName, includeOcr=false){
   if(!pages.length) return;
+  const epoch=sessionEpoch;
+  const exportPages=pages.slice();
 
   pdfBtn.disabled=true;
   setStatus("Building PDF…",10);
@@ -2023,8 +2198,9 @@ async function savePDF(fileName, includeOcr=false){
 
     let doc=null;
 
-    for(let i=0;i<pages.length;i++){
-      const p=pages[i];
+    for(let i=0;i<exportPages.length;i++){
+      assertSession(epoch);
+      const p=exportPages[i];
 
       setStatus(
         `Adding page ${i+1} of ${pages.length}…`,
@@ -2060,6 +2236,7 @@ async function savePDF(fileName, includeOcr=false){
       }
 
       const data=await makePageDataURL(p);
+      assertSession(epoch);
 
       doc.addImage(
         data,
@@ -2087,15 +2264,17 @@ async function savePDF(fileName, includeOcr=false){
         });
         addSearchableText(doc,ocrData,p,x,y,drawW,drawH);
       }catch(ocrError){
+        assertSession(epoch);
         console.warn("OCR export skipped for page",i+1,ocrError);
       }
     }
 
-    downloadBlob(doc.output("blob"),fileName+".pdf");
+    downloadBlob(doc.output("blob"),fileName+".pdf",epoch);
 
     setStatus("PDF saved successfully.",100);
     toast("PDF saved");
   }catch(e){
+    if(epoch!==sessionEpoch) return;
     console.error("PDF creation error:",e);
 
     toast(
@@ -2138,7 +2317,11 @@ function openExport(){
 }
 function closeExport(){exportModal.classList.remove("open")}
 async function confirmExport(){
+  if(exportBusy) return;
+  exportBusy=true;
+  const epoch=sessionEpoch;
   if(exportImagesEl.checked && pages.length!==1){
+    exportBusy=false;
     toast("Image download is available only for one scanned page.");
     return;
   }
@@ -2154,15 +2337,19 @@ async function confirmExport(){
     } else {
       await savePDF(fileName,exportOcrEl.checked);
     }
+    assertSession(epoch);
     setStatus("Downloads ready.",100);
     toast("Download complete");
-  }finally{
+  }catch(error){if(epoch===sessionEpoch) toast(error.message);}
+  finally{
+    exportBusy=false;
     confirmExportButton.disabled=false;
   }
 }
 
 // Save multiple images as ZIP (Phase 6)
 async function saveImagesZip(fileName){
+  const epoch=sessionEpoch;
   if(pages.length<2){
     toast("ZIP export requires at least 2 pages");
     return;
@@ -2174,7 +2361,7 @@ async function saveImagesZip(fileName){
       setStatus("Loading compression library…",10);
       await new Promise((resolve,reject)=>{
         const script=document.createElement("script");
-        script.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+        script.src="vendor/jszip-3.10.1/dist/jszip.min.js";
         script.onload=resolve;
         script.onerror=reject;
         document.head.appendChild(script);
@@ -2187,6 +2374,7 @@ async function saveImagesZip(fileName){
   }
 
   try{
+    assertSession(epoch);
     const zip=new window.JSZip();
     const folder=zip.folder("pages");
 
@@ -2202,10 +2390,11 @@ async function saveImagesZip(fileName){
 
     setStatus("Creating ZIP…",95);
     const blob=await folder.generateAsync({type:"blob",compression:"DEFLATE"});
-    downloadBlob(blob,fileName+".zip");
+    downloadBlob(blob,fileName+".zip",epoch);
     
     setStatus("ZIP created successfully",100);
   }catch(e){
+    if(epoch!==sessionEpoch) return;
     console.error("ZIP creation error:",e);
     toast("ZIP creation failed: "+e.message);
     setStatus("ZIP creation failed",0);

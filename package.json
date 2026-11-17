@@ -1,0 +1,11 @@
+{
+  "name": "govscan-security-checks",
+  "private": true,
+  "scripts": {
+    "test": "node security/vapt-checks.cjs",
+    "test:browser": "node security/browser-checks.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1"
+  }
+}

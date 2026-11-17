@@ -1,160 +1,121 @@
-/**
- * PDF Import Handler Service
- * Handles PDF file import and page extraction
- */
-
+/** Bounded, cancellable rendering with a locally distributed PDF.js. */
 class PDFImportHandler {
-  constructor() {
-    this.pdfLib = null;
-  }
-
-  /**
-   * Initialize PDF library (pdf.js)
-   */
+  constructor() { this.pdfLib = null; this.initializing = null; this.active = null; }
   async initialize() {
     if (this.pdfLib) return;
-
-    // Check if pdfjs is available, otherwise load it
-    if (!window.pdfjsLib) {
-      // Load pdf.js from CDN
-      if (!window.PDFWorkerLoaded) {
-        window.pdfjsLib = await this._loadPdfJS();
-        window.PDFWorkerLoaded = true;
-      }
+    if (!this.initializing) {
+      this.initializing = this._loadPdfJS().then(lib => {
+        lib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdfjs-dist-6.5.438/build/pdf.worker.min.mjs', document.baseURI).href;
+        this.pdfLib = lib;
+      }).catch(error => { this.initializing = null; throw error; });
     }
-    this.pdfLib = window.pdfjsLib;
+    await this.initializing;
   }
-
-  /**
-   * Load pdf.js library from CDN
-   */
-  _loadPdfJS() {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      script.onload = () => {
-        // Set worker for pdf.js
-        if (window.pdfjsLib) {
-          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-          resolve(window.pdfjsLib);
-        } else {
-          reject(new Error('pdfjs-dist failed to load'));
-        }
-      };
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-  }
-
-  /**
-   * Import PDF file and extract pages
-   * @param {File} file - PDF file to import
-   * @param {Function} onProgress - Progress callback (current, total)
-   * @returns {Promise<Array>} Array of page objects
-   */
-  async importPDF(file, onProgress) {
-    if (!file || (!file.type.toLowerCase().includes('pdf') && !file.name.toLowerCase().endsWith('.pdf'))) {
-      throw new Error('File is not a PDF');
-    }
-
+  _loadPdfJS() { return import(new URL('vendor/pdfjs-dist-6.5.438/build/pdf.min.mjs', document.baseURI).href); }
+  cancel() { this.active?.abort(); }
+  async _withPDF(file, options, run) {
+    validateFileSize(file);
+    if (this.active) throw new Error('Another PDF is being processed. Please wait.');
+    const controller = new AbortController();
+    this.active = controller;
+    const signal = controller.signal;
+    const abort = () => controller.abort();
+    options.signal?.addEventListener('abort', abort, { once: true });
+    if (options.signal?.aborted) abort();
+    const timer = setTimeout(abort, SECURITY_LIMITS.operationTimeout);
+    let task, destroyPromise;
+    const destroy = () => {
+      if (task && !destroyPromise) destroyPromise = Promise.resolve().then(() => task.destroy()).catch(() => {});
+      return destroyPromise;
+    };
+    signal.addEventListener('abort', destroy, { once: true });
+    const guard = () => { if (signal.aborted) throw new Error('PDF processing cancelled or timed out.'); };
     try {
-      await this.initialize();
-
-      // Read file as ArrayBuffer
-      const arrayBuffer = await file.arrayBuffer();
-      
-      // Load PDF
-      const pdf = await this.pdfLib.getDocument({ data: arrayBuffer }).promise;
-      const pages = [];
-
-      // Extract each page
-      for (let i = 1; i <= pdf.numPages; i++) {
-        if (onProgress) onProgress(i, pdf.numPages);
-
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2.0 }); // 2x for better quality
-
-        // Create canvas
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-
-        // Render page to canvas
-        const context = canvas.getContext('2d');
-        await page.render({
-          canvasContext: context,
-          viewport: viewport
-        }).promise;
-
-        // Convert canvas to blob
-        const blob = await new Promise(resolve => {
-          canvas.toBlob(resolve, 'image/jpeg', 0.92);
-        });
-        if (!blob) throw new Error('The browser could not create an image for PDF page ' + i);
-
-        // Create page object
-        const pageObj = {
-          id: `pdf-${Date.now()}-${i}`,
-          type: 'pdf-imported',
-          source: {
-            file: file.name,
-            pageIndex: i - 1
-          },
-          blob: blob,
-          url: URL.createObjectURL(blob),
-          w: viewport.width,
-          h: viewport.height,
-          rotation: 0,
-          name: `${file.name} - Page ${i}`,
-          quality: null,
-          ocr: null,
-          edited: false // Track if page was edited (cropped/enhanced)
-        };
-
-        pages.push(pageObj);
+      guard(); await this.initialize(); guard();
+      const data = await file.arrayBuffer();
+      guard();
+      if (data.byteLength > SECURITY_LIMITS.maxFileBytes) throw new Error('PDF exceeds the file size limit.');
+      const header = new TextDecoder('ascii').decode(new Uint8Array(data, 0, Math.min(1024, data.byteLength)));
+      if (!header.includes('%PDF-')) throw new Error('File is not a PDF.');
+      const assetBase = new URL('vendor/pdfjs-dist-6.5.438/', document.baseURI);
+      task = this.pdfLib.getDocument({
+        data, isEvalSupported: false, enableScripting: false, enableXfa: false,
+        maxImageSize: SECURITY_LIMITS.maxPixels, canvasMaxAreaInBytes: SECURITY_LIMITS.maxPixels * 4,
+        cMapUrl: new URL('cmaps/', assetBase).href, cMapPacked: true,
+        standardFontDataUrl: new URL('standard_fonts/', assetBase).href,
+        wasmUrl: new URL('wasm/', assetBase).href, iccUrl: new URL('iccs/', assetBase).href,
+      });
+      const pdf = await task.promise;
+      guard();
+      const maxPages = Math.min(SECURITY_LIMITS.maxPages, options.maxPages ?? SECURITY_LIMITS.maxPages);
+      if (!Number.isSafeInteger(pdf.numPages) || pdf.numPages < 1 || pdf.numPages > maxPages) {
+        throw new Error('PDF exceeds the remaining page limit (100 pages per scan).');
       }
-
-      return pages;
-    } catch (error) {
-      console.error('PDF import error:', error);
-      throw new Error(`Failed to import PDF: ${error.message}`);
+      return await run(pdf, guard);
+    } finally {
+      clearTimeout(timer);
+      options.signal?.removeEventListener('abort', abort);
+      signal.removeEventListener('abort', destroy);
+      await destroy();
+      if (this.active === controller) this.active = null;
     }
   }
-
-  /**
-   * Render a single PDF page to canvas
-   * @param {File} pdfFile - PDF file
-   * @param {number} pageIndex - 0-based page index
-   * @param {number} scale - Scale factor (default 2.0)
-   * @returns {Promise<HTMLCanvasElement>}
-   */
-  async renderPageToCanvas(pdfFile, pageIndex, scale = 2.0) {
+  async _render(pdf, index, scale, guard) {
+    guard();
+    const page = await pdf.getPage(index + 1);
+    let canvas;
     try {
-      await this.initialize();
-
-      const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf = await this.pdfLib.getDocument({ data: arrayBuffer }).promise;
-      const page = await pdf.getPage(pageIndex + 1);
+      guard();
+      if (!Number.isFinite(scale) || scale <= 0 || scale > 2) throw new Error('Invalid PDF rendering scale.');
       const viewport = page.getViewport({ scale });
-
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-
-      const context = canvas.getContext('2d');
-      await page.render({
-        canvasContext: context,
-        viewport: viewport
-      }).promise;
-
+      validateDimensions(viewport.width, viewport.height);
+      canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      guard();
       return canvas;
     } catch (error) {
-      console.error('PDF page render error:', error);
+      if (canvas) canvas.width = canvas.height = 0;
       throw error;
-    }
+    } finally { page.cleanup(); }
+  }
+  async importPDF(file, onProgress, options = {}) {
+    const pages = [];
+    try {
+      return await this._withPDF(file, options, async (pdf, guard) => {
+        let totalPixels = 0, totalBytes = 0;
+        for (let i = 0; i < pdf.numPages; i++) {
+          guard(); onProgress?.(i + 1, pdf.numPages);
+          const canvas = await this._render(pdf, i, 2, guard);
+          try {
+            totalPixels += canvas.width * canvas.height;
+            if (totalPixels > SECURITY_LIMITS.maxImportPixels) throw new Error('PDF exceeds the total rendering budget.');
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+            guard();
+            if (!blob) throw new Error('Could not encode PDF page.');
+            totalBytes += blob.size;
+            if (totalBytes > Math.min(options.maxBytes ?? SECURITY_LIMITS.maxSessionBytes, SECURITY_LIMITS.maxSessionBytes)) {
+              throw new Error('PDF exceeds the remaining scan memory budget.');
+            }
+            pages.push({ id: `pdf-${Date.now()}-${i}`, type: 'pdf-imported',
+              source: { file: file.name, pageIndex: i }, blob, url: URL.createObjectURL(blob),
+              w: canvas.width, h: canvas.height, rotation: 0, name: `${file.name} - Page ${i + 1}`,
+              quality: null, ocr: null, edited: false });
+          } finally { canvas.width = canvas.height = 0; }
+        }
+        guard(); return pages;
+      });
+    } catch (error) { pages.forEach(page => URL.revokeObjectURL(page.url)); throw error; }
+  }
+  async renderPageToCanvas(file, index, scale = 2, options = {}) {
+    let canvas;
+    try {
+      return await this._withPDF(file, options, async (pdf, guard) => {
+        if (!Number.isInteger(index) || index < 0 || index >= pdf.numPages) throw new Error('Invalid PDF page.');
+        canvas = await this._render(pdf, index, scale, guard);
+        guard(); return canvas;
+      });
+    } catch (error) { if (canvas) canvas.width = canvas.height = 0; throw error; }
   }
 }
-
-// Create singleton instance
 const pdfImportHandler = new PDFImportHandler();

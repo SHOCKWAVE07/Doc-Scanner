@@ -15,6 +15,8 @@ class CameraStreamManager {
     this.onFrameCallback = null;
     this.frameSkip = 0; // Skip every Nth frame for performance
     this.frameSkipRate = 2; // Process every 2nd frame in preview
+    this.generation = 0;
+    this.cancelInitialization = null;
   }
 
   /**
@@ -25,6 +27,8 @@ class CameraStreamManager {
    * @returns {Promise<boolean>}
    */
   async initialize(videoElement, previewCanvas, scanner) {
+    this.stop();
+    const generation = ++this.generation;
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Live camera requires HTTPS or localhost in a supported browser.");
@@ -35,7 +39,7 @@ class CameraStreamManager {
       this.scanner = scanner;
 
       // Request camera permission
-      this.stream = await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "environment",
           width: { ideal: 1920 },
@@ -43,23 +47,43 @@ class CameraStreamManager {
         },
         audio: false,
       });
+      if (generation !== this.generation) {
+        stream.getTracks().forEach(track => track.stop());
+        throw new Error('Camera session cancelled.');
+      }
+      this.stream = stream;
 
       this.videoElement.srcObject = this.stream;
 
       // Wait for video to be ready
-      await new Promise((resolve) => {
+      await new Promise((resolve, reject) => {
+        let settled = false;
+        const finish = error => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          this.videoElement.onloadedmetadata = null;
+          if (this.cancelInitialization === cancel) this.cancelInitialization = null;
+          if (error) reject(error); else resolve();
+        };
+        const cancel = () => finish(new Error('Camera session cancelled.'));
+        const timer = setTimeout(() => finish(new Error('Camera preview timed out.')), 15000);
+        this.cancelInitialization = cancel;
         this.videoElement.onloadedmetadata = () => {
+          if (generation !== this.generation) return cancel();
           const maxWidth = this.config.imageProcessing.maxPreviewResolution || 1024;
           const scale = Math.min(1, maxWidth / this.videoElement.videoWidth);
           this.previewCanvas.width = Math.max(1, Math.round(this.videoElement.videoWidth * scale));
           this.previewCanvas.height = Math.max(1, Math.round(this.videoElement.videoHeight * scale));
           this.videoElement.play().catch(() => {});
-          resolve();
+          finish();
         };
+        if (this.videoElement.readyState >= 1) this.videoElement.onloadedmetadata();
       });
-
+      if (generation !== this.generation) throw new Error('Camera session cancelled.');
       return true;
     } catch (e) {
+      if (generation === this.generation) this.stop();
       console.error("Camera initialization failed:", e);
       if (e.name === "NotAllowedError") {
         throw new Error(
@@ -88,6 +112,9 @@ class CameraStreamManager {
    * Stop camera stream and frame processing
    */
   stop() {
+    this.generation++;
+    this.cancelInitialization?.();
+    this.cancelInitialization = null;
     this.isRunning = false;
 
     if (this.animationFrameId) {

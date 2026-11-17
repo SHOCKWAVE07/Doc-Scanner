@@ -1,0 +1,61 @@
+﻿{
+  "scope": "Remediation regressions; mocked PDF parser and browser APIs",
+  "results": [
+    {
+      "name": "Both PDF entry points disable evaluation/scripting, render valid input, and destroy parser resources",
+      "result": "PASS"
+    },
+    {
+      "name": "Oversize PDFs are rejected before reading",
+      "result": "PASS"
+    },
+    {
+      "name": "Non-PDF contents are rejected before parser invocation",
+      "result": "PASS"
+    },
+    {
+      "name": "Excess page counts and dimensions are rejected before canvas allocation",
+      "result": "PASS"
+    },
+    {
+      "name": "Failed import releases partial URLs, canvases, and parser resources",
+      "result": "PASS"
+    },
+    {
+      "name": "Total rendering and output-byte budgets are enforced with rollback",
+      "result": "PASS"
+    },
+    {
+      "name": "Null canvas encoding fails safely and releases resources",
+      "result": "PASS"
+    },
+    {
+      "name": "Cancellation destroys an active parser and concurrent imports are refused",
+      "result": "PASS"
+    },
+    {
+      "name": "Pre-aborted imports do not read input",
+      "result": "PASS"
+    },
+    {
+      "name": "Late camera permission and metadata cannot restore a stopped session",
+      "result": "PASS"
+    },
+    {
+      "name": "Image signature/dimension validation accepts bounded PNG and rejects oversized or spoofed images",
+      "result": "PASS"
+    },
+    {
+      "name": "All vendored asset hashes match the reviewed inventory",
+      "result": "PASS"
+    },
+    {
+      "name": "Executable entry points use local assets and CSP restricts network origins",
+      "result": "PASS"
+    },
+    {
+      "name": "JavaScript syntax (16 application files)",
+      "result": "PASS"
+    }
+  ]
+}
