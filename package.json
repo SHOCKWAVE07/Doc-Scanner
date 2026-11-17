@@ -2,6 +2,8 @@
   "name": "govscan-security-checks",
   "private": true,
   "scripts": {
+    "package:runtime": "node scripts/package-runtime.cjs",
+    "package:compact": "node scripts/package-runtime.cjs --compact",
     "test": "node security/vapt-checks.cjs",
     "test:browser": "node security/browser-checks.cjs"
   },

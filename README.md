@@ -38,6 +38,30 @@ Ship the `vendor/` directory with the site: dependencies, PDF rendering, and OCR
 assets are now hosted locally. See [SECURITY.md](SECURITY.md) for enforced input
 limits, session clearing, dependency verification, and required hosting headers.
 
+## Portable deployment ZIP
+
+Run `npm run package:runtime` (or `node scripts/package-runtime.cjs`) to create
+`dist/Doc-Scanner-runtime.zip`. Building the archive uses the existing local ZIP
+library and requires no package installation. The archive contains the static
+application, required runtime assets, license notices, security headers, a
+byte-accurate vendor inventory, and brief deployment instructions. It excludes
+reports, tests, development packages, Git files, caches, and duplicate standalone
+OCR WASM binaries already embedded in the OCR loaders.
+
+Extract the archive into a static server's document root, or deploy the ZIP to
+Netlify. No backend, database, Node.js runtime, or npm installation is needed on
+the target host. Serve over HTTPS or localhost; direct `file://` opening does
+not support all features. See `DEPLOYMENT.txt` inside the archive for MIME-type
+and hosting-header requirements.
+
+For the smaller archive, run `npm run package:compact`. This creates
+`dist/Doc-Scanner-compact.zip` and removes unused legacy-engine data from the
+English OCR archive. The app uses LSTM-only OCR; its active recognition model,
+dictionaries, character set, recoder, and version are retained byte-for-byte.
+The compact archive includes an updated integrity manifest and modification
+notice. It retains both OCR CPU variants, all PDF rendering assets, and offline
+operation. The original runtime archive is kept separately.
+
 ## Documentation
 
 See [FEATURES.md](FEATURES.md) for a detailed explanation of how every feature works, including the scanning, processing, OCR, and export flows.

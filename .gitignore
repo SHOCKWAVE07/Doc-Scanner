@@ -1,3 +1,4 @@
 security/.vendor-cache/
 node_modules/
 security/.browser-profile/
+dist/

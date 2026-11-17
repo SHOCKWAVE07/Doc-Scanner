@@ -4,7 +4,7 @@ const http=require('node:http');
 const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
-const root=path.resolve(__dirname,'..');
+const root=process.env.DOCSCANNER_TEST_ROOT ? path.resolve(process.env.DOCSCANNER_TEST_ROOT) : path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const policy=html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
 const target=process.argv[2] ? new URL(process.argv[2]) : null;
@@ -82,6 +82,19 @@ async function check(name,fn){await fn();results.push({name,result:'PASS'});cons
     await page.evaluate(()=>runOcr(0));
     const text=await page.locator('#ocrText').inputValue();
     assert.match(text,/GOVSCAN|TEST/i,await page.locator('#ocrStatus').textContent());
+  });
+  if(process.env.DOCSCANNER_TEST_ROOT)await check('Portable archive supports the non-SIMD OCR core without standalone WASM copies',async()=>{
+    const text=await page.evaluate(async()=>{
+      const worker=await Tesseract.createWorker('eng',1,{
+        workerPath:new URL('vendor/tesseract.js-5.1.1/dist/worker.min.js',document.baseURI).href,
+        corePath:new URL('vendor/tesseract.js-core-5.1.1/tesseract-core-lstm.wasm.js',document.baseURI).href,
+        langPath:new URL('vendor/tessdata/',document.baseURI).href,
+        workerBlobURL:false,cacheMethod:'none',gzip:true,
+      });
+      try{return (await worker.recognize(testImage)).data.text;}
+      finally{await worker.terminate();}
+    });
+    assert.match(text,/GOVSCAN|TEST/i);
   });
   await check('ZIP export loads its local dependency and downloads an archive',async()=>{
     const downloadPromise=page.waitForEvent('download');
@@ -190,7 +203,7 @@ async function check(name,fn){await fn();results.push({name,result:'PASS'});cons
   .finally(async()=>{
     // Include events from every test, including checks added after the network check.
     if(external.length||failedResponses.length||errors.length)process.exitCode=1;
-    fs.writeFileSync(path.join(__dirname,target?'live-browser-results.json':'browser-results.json'),JSON.stringify({
+    fs.writeFileSync(process.env.DOCSCANNER_TEST_RESULTS || path.join(__dirname,target?'live-browser-results.json':'browser-results.json'),JSON.stringify({
       checkedAtUtc:new Date().toISOString(),target:target?.href||'loopback test server',browser:browser?await browser.version():null,
       result:process.exitCode?'FAIL':'PASS',results,external,failedResponses,errors,
       consoleErrors:consoleErrors.map(message=>message.slice(0,1000)),failedRequests,
